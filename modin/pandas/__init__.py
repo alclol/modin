@@ -246,7 +246,8 @@ elif execution_engine == "Dask":  # pragma: no cover
             num_cpus = os.environ.get("MODIN_CPUS", None) or multiprocessing.cpu_count()
             client = Client(n_workers=int(num_cpus))
 elif execution_engine != "Python":
-    raise ImportError("Unrecognized execution engine: {}.".format(execution_engine))
+    pass
+    # raise ImportError("Unrecognized execution engine: {}.".format(execution_engine))
 
 DEFAULT_NPARTITIONS = max(4, int(num_cpus))
 
