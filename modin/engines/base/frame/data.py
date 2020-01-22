@@ -10,10 +10,82 @@ from modin.error_message import ErrorMessage
 from modin.backends.pandas.parsers import find_common_type_cat as find_common_type
 
 
+def _compute_lengths(lengths_list, n, from_back=False):
+    """Computes the new lengths based on the lengths/widths of the previous and `n`.
+
+    Args:
+        lengths_list: The list of lengths or widths.
+        n: The number of rows or columns extracted.
+        from_back: Whether or not to compute from the back. Used in `tail`/`back`
+
+    Returns:
+         A list of lengths or widths of the resulting dataframe.
+    """
+    if not from_back:
+        idx = np.digitize(n, np.cumsum(lengths_list))
+        if idx == 0:
+            return [n]
+        return [
+            lengths_list[i] if i < idx else n - sum(lengths_list[:i])
+            for i in range(len(lengths_list))
+            if i <= idx
+        ]
+    else:
+        lengths_list = [i for i in lengths_list if i > 0]
+        idx = np.digitize(sum(lengths_list) - n, np.cumsum(lengths_list))
+        if idx == len(lengths_list) - 1:
+            return [n]
+        return [
+            lengths_list[i] if i > idx else n - sum(lengths_list[i + 1:])
+            for i in range(len(lengths_list))
+            if i >= idx
+        ]
+
+
+class BaseQueryPlanner(object):
+    plan = dict()
+
+    @classmethod
+    def add_to_plan(cls, lazy_obj):
+        if lazy_obj not in cls.plan:
+            cls.plan[lazy_obj] = (lazy_obj.parent, lazy_obj.op, lazy_obj.args, lazy_obj.kwargs)
+
+    @classmethod
+    def execute_plan(cls, obj):
+        assert obj in cls.plan
+        if isinstance(cls.plan[obj], BasePandasFrame):
+            return cls.plan[obj]
+        parent, op, args, kwargs = cls.plan[obj]
+        if parent is not None or not isinstance(parent, BasePandasFrame):
+            parent = cls.execute_plan(parent)
+            cls.plan[obj] = op(parent, *args, **kwargs)
+            return cls.plan[obj]
+        elif isinstance(parent, BasePandasFrame):
+            cls.plan[obj] = op(parent, *args, **kwargs)
+            return cls.plan[obj]
+        else:
+            return obj
+
+
 class BasePandasFrame(object):
 
     _frame_mgr_cls = None
     _query_compiler_cls = PandasQueryCompiler
+
+    def __getattribute__(self, item):
+        try:
+            op = getattr(BasePandasFrame, item)
+        except AttributeError:
+            op = None
+        if not callable(op) or item in ["__init__", "__constructor__", "__class__", "to_pandas", "_row_lengths", "_column_widths", "dtypes", "axes", "_dtypes", "_compute_map_reduce_metadata", "_build_mapreduce_func", "_join_index_objects", "_filter_empties", "_apply_index_objs"]:
+            return object.__getattribute__(self, item)
+
+        def lazy_call(*args, **kwargs):
+            new_lazy_frame = LazyBasePandasFrame.create(self, op, args, kwargs)
+            BaseQueryPlanner.add_to_plan(new_lazy_frame)
+            return new_lazy_frame
+        print(item)
+        return lazy_call
 
     @property
     def __constructor__(self):
@@ -62,6 +134,7 @@ class BasePandasFrame(object):
         self._column_widths_cache = column_widths
         self._dtypes = dtypes
         self._filter_empties()
+        BaseQueryPlanner.plan[self] = self
 
     @property
     def _row_lengths(self):
@@ -1236,37 +1309,6 @@ class BasePandasFrame(object):
         )
 
     # Head/Tail/Front/Back
-    @staticmethod
-    def _compute_lengths(lengths_list, n, from_back=False):
-        """Computes the new lengths based on the lengths/widths of the previous and `n`.
-
-        Args:
-            lengths_list: The list of lengths or widths.
-            n: The number of rows or columns extracted.
-            from_back: Whether or not to compute from the back. Used in `tail`/`back`
-
-        Returns:
-             A list of lengths or widths of the resulting dataframe.
-        """
-        if not from_back:
-            idx = np.digitize(n, np.cumsum(lengths_list))
-            if idx == 0:
-                return [n]
-            return [
-                lengths_list[i] if i < idx else n - sum(lengths_list[:i])
-                for i in range(len(lengths_list))
-                if i <= idx
-            ]
-        else:
-            lengths_list = [i for i in lengths_list if i > 0]
-            idx = np.digitize(sum(lengths_list) - n, np.cumsum(lengths_list))
-            if idx == len(lengths_list) - 1:
-                return [n]
-            return [
-                lengths_list[i] if i > idx else n - sum(lengths_list[i + 1 :])
-                for i in range(len(lengths_list))
-                if i >= idx
-            ]
 
     def head(self, n):
         """Returns the first n rows.
@@ -1282,7 +1324,7 @@ class BasePandasFrame(object):
         # allows the implementation to stay modular and reduces data copying.
         if n < 0:
             n = max(0, len(self.index) + n)
-        new_row_lengths = self._compute_lengths(self._row_lengths, n)
+        new_row_lengths = _compute_lengths(self._row_lengths, n)
         new_partitions = self._frame_mgr_cls.take(
             0, self._partitions, self._row_lengths, n
         )
@@ -1307,7 +1349,7 @@ class BasePandasFrame(object):
         # See head for an explanation of the transposed behavior
         if n < 0:
             n = max(0, len(self.index) + n)
-        new_row_lengths = self._compute_lengths(self._row_lengths, n, from_back=True)
+        new_row_lengths = _compute_lengths(self._row_lengths, n, from_back=True)
         new_partitions = self._frame_mgr_cls.take(
             0, self._partitions, self._row_lengths, -n
         )
@@ -1329,7 +1371,7 @@ class BasePandasFrame(object):
         Returns:
             A new dataframe.
         """
-        new_col_lengths = self._compute_lengths(self._column_widths, n)
+        new_col_lengths = _compute_lengths(self._column_widths, n)
         new_partitions = self._frame_mgr_cls.take(
             1, self._partitions, self._column_widths, n
         )
@@ -1351,7 +1393,7 @@ class BasePandasFrame(object):
         Returns:
             A new dataframe.
         """
-        new_col_lengths = self._compute_lengths(self._column_widths, n, from_back=True)
+        new_col_lengths = _compute_lengths(self._column_widths, n, from_back=True)
         new_partitions = self._frame_mgr_cls.take(
             1, self._partitions, self._column_widths, -n
         )
@@ -1365,3 +1407,60 @@ class BasePandasFrame(object):
         )
 
     # End Head/Tail/Front/Back
+
+
+def get_name(args):
+    return tuple([a._pandas_func if hasattr(a, "_pandas_func") else a for a in args])
+
+
+class LazyBasePandasFrame(BasePandasFrame):
+    parent = op = args = kwargs = None
+
+    lazy_obj_cache = dict()
+    lazy_call_cache = dict()
+
+    @classmethod
+    def add_to_call_cache(cls, parent, op, args, kwargs):
+        args = get_name(args)
+        if op not in cls.lazy_call_cache:
+            cls.lazy_call_cache[op] = dict()
+        if parent not in cls.lazy_call_cache[op]:
+            cls.lazy_call_cache[op][parent] = [(args, kwargs)]
+        else:
+            cls.lazy_call_cache[op][parent] += [(args, kwargs)]
+
+    @classmethod
+    def add_to_obj_cache(cls, parent, op, lazy_obj):
+        if op not in cls.lazy_obj_cache:
+            cls.lazy_obj_cache[op] = dict()
+        if parent not in cls.lazy_obj_cache[op]:
+            cls.lazy_obj_cache[op][parent] = [lazy_obj]
+        else:
+            cls.lazy_obj_cache[op][parent] += [lazy_obj]
+
+    @classmethod
+    def create(cls, parent, op, args, kwargs):
+        original_args = args
+        args = get_name(args)
+        if op in cls.lazy_call_cache and parent in cls.lazy_call_cache[op]:
+            if (args, kwargs) in cls.lazy_call_cache[op][parent]:
+                idx = cls.lazy_call_cache[op][parent].index((args, kwargs))
+                return cls.lazy_obj_cache[op][parent][idx]
+        return cls(parent, op, original_args, kwargs)
+
+    def __init__(self, parent, op, args, kwargs):
+        self.parent = parent
+        self.op = op
+        self.args = args
+        self.kwargs = kwargs
+        LazyBasePandasFrame.add_to_call_cache(parent, op, args, kwargs)
+        LazyBasePandasFrame.add_to_obj_cache(parent, op, self)
+        BaseQueryPlanner.add_to_plan(self)
+
+    def __getattribute__(self, item):
+        op = getattr(LazyBasePandasFrame, item)
+        if not callable(op) or item in ["__init__", "__constructor__", "__class__", "to_pandas"]:
+            if item in ["parent", "op", "args", "kwargs"]:
+                return object.__getattribute__(self, item)
+            return object.__getattribute__(BaseQueryPlanner.execute_plan(self), item)
+        return super(LazyBasePandasFrame, self).__getattribute__(item)
