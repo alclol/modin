@@ -45,6 +45,8 @@ from pandas import (
     Int16Dtype,
     Int32Dtype,
     Int64Dtype,
+    StringDtype,
+    BooleanDtype,
     CategoricalDtype,
     DatetimeTZDtype,
     IntervalDtype,
@@ -70,6 +72,7 @@ from pandas import (
     SparseDataFrame,
     datetime,
     NamedAgg,
+    NA,
 )
 import threading
 import os
@@ -89,7 +92,6 @@ from .io import (
     read_excel,
     read_hdf,
     read_feather,
-    read_msgpack,
     read_stata,
     read_sas,
     read_pickle,
@@ -103,6 +105,8 @@ from .io import (
     ExcelFile,
     to_pickle,
     HDFStore,
+    json_normalize,
+    read_orc,
 )
 from .reshape import get_dummies, melt, crosstab, lreshape, wide_to_long
 from .series import Series
@@ -340,3 +344,11 @@ __all__ = [
 ]
 
 del pandas
+del warnings
+del threading
+del types
+del initialize_ray
+del ray
+del os
+del num_cpus
+del sys

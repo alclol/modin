@@ -88,10 +88,10 @@ def crosstab(
     colnames=None,
     aggfunc=None,
     margins=False,
-    margins_name="All",
-    dropna=True,
+    margins_name: str = "All",
+    dropna: bool = True,
     normalize=False,
-):
+) -> DataFrame:
     ErrorMessage.default_to_pandas("`crosstab`")
     pandas_crosstab = pandas.crosstab(
         index,
@@ -108,7 +108,7 @@ def crosstab(
     return DataFrame(pandas_crosstab)
 
 
-def lreshape(data, groups, dropna=True, label=None):
+def lreshape(data: DataFrame, groups, dropna=True, label=None):
     if not isinstance(data, DataFrame):
         raise ValueError("can not lreshape with instance of type {}".format(type(data)))
     ErrorMessage.default_to_pandas("`lreshape`")
@@ -117,7 +117,7 @@ def lreshape(data, groups, dropna=True, label=None):
     )
 
 
-def wide_to_long(df, stubnames, i, j, sep="", suffix=r"\d+"):
+def wide_to_long(df: DataFrame, stubnames, i, j, sep: str = "", suffix: str = r"\d+") -> DataFrame:
     if not isinstance(df, DataFrame):
         raise ValueError(
             "can not wide_to_long with instance of type {}".format(type(df))

@@ -358,15 +358,6 @@ class BaseIO(object):
         )
 
     @classmethod
-    def read_msgpack(cls, path_or_buf, encoding="utf-8", iterator=False, **kwargs):
-        ErrorMessage.default_to_pandas("`read_msgpack`")
-        return cls.from_pandas(
-            pandas.read_msgpack(
-                path_or_buf, encoding=encoding, iterator=iterator, **kwargs
-            )
-        )
-
-    @classmethod
     def read_stata(
         cls,
         filepath_or_buffer,

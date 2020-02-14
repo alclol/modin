@@ -189,20 +189,6 @@ class DataFrame(BasePandasDataset):
         # DataFrames have an invariant that requires they be 2 dimensions.
         return 2
 
-    @property
-    def ftypes(self):
-        """Get the ftypes for this DataFrame.
-
-        Returns:
-            The ftypes for this DataFrame.
-        """
-        # The ftypes are common across all partitions.
-        # The first partition will be enough.
-        dtypes = self.dtypes.copy()
-        ftypes = ["{0}:dense".format(str(dtype)) for dtype in dtypes.values]
-        result = pandas.Series(ftypes, index=self.columns)
-        return result
-
     def drop_duplicates(self, subset=None, keep="first", inplace=False):
         return super(DataFrame, self).drop_duplicates(
             subset=subset, keep=keep, inplace=inplace

@@ -8,7 +8,8 @@ def test_top_level_api_equality():
     modin_dir = [obj for obj in dir(pd) if obj[0] != "_"]
     pandas_dir = [obj for obj in dir(pandas) if obj[0] != "_"]
     missing_from_modin = set(pandas_dir) - set(modin_dir)
-    ignore = [
+    extra_in_modin = set(modin_dir) - set(pandas_dir)
+    ignore_pandas = [
         "np",
         "testing",
         "tests",
@@ -30,14 +31,32 @@ def test_top_level_api_equality():
         "Panel",  # This is deprecated and throws a warning every time.
     ]
 
+    ignore_modin = [
+        "DEFAULT_NPARTITIONS",
+        "iterator",
+        "series",
+        "base",
+        "utils",
+        "dataframe",
+        "threading",
+        "general",
+        "datetimes",
+        "reshape",
+        "execution_engine",
+    ]
+
     assert not len(
-        missing_from_modin - set(ignore)
-    ), "Differences found in API: {}".format(missing_from_modin - set(ignore))
+        missing_from_modin - set(ignore_pandas)
+    ), "Differences found in API: {}".format(missing_from_modin - set(ignore_pandas))
+
+    assert not len(
+        extra_in_modin - set(ignore_modin)
+    ), "Differences found in API: {}".format(extra_in_modin - set(ignore_modin))
 
     difference = []
     allowed_different = ["Interval", "datetime"]
 
-    for m in set(pandas_dir) - set(ignore):
+    for m in set(pandas_dir) - set(ignore_pandas):
         if m in allowed_different:
             continue
         try:
@@ -56,7 +75,7 @@ def test_top_level_api_equality():
                     {
                         i: pandas_sig[i]
                         for i in pandas_sig.keys()
-                        if pandas_sig[i] != modin_sig[i]
+                        if i not in modin_sig or pandas_sig[i] != modin_sig[i]
                         and not (
                             pandas_sig[i].default is np.nan
                             and modin_sig[i].default is np.nan
