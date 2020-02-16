@@ -103,7 +103,7 @@ def merge_ordered(
     right_by=None,
     fill_method=None,
     suffixes=("_x", "_y"),
-    how: str="outer",
+    how: str = "outer",
 ) -> DataFrame:
     if not isinstance(left, DataFrame):
         raise ValueError(

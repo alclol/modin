@@ -13,7 +13,7 @@ from pandas.core.dtypes.common import (
     is_object_dtype,
 )
 from pandas.core.indexing import convert_to_index_sliceable
-from pandas.util._validators import validate_bool_kwarg
+from pandas.util._validators import validate_bool_kwarg, validate_percentile
 import re
 import warnings
 import pickle as pkl
@@ -583,9 +583,6 @@ class BasePandasDataset(object):
         query_compiler = self._query_compiler.apply(func, axis, args=args, **kwds)
         return query_compiler
 
-    def as_blocks(self, copy=True):
-        return self._default_to_pandas("as_blocks", copy=copy)
-
     def as_matrix(self, columns=None):
         """Convert the frame to its Numpy-array representation.
 
@@ -701,12 +698,6 @@ class BasePandasDataset(object):
         )
         return self._create_or_update_from_compiler(new_query_compiler, inplace)
 
-    def clip_lower(self, threshold, axis=None, inplace=False):
-        return self.clip(lower=threshold, axis=axis, inplace=inplace)
-
-    def clip_upper(self, threshold, axis=None, inplace=False):
-        return self.clip(upper=threshold, axis=axis, inplace=inplace)
-
     def combine(self, other, func, fill_value=None, **kwargs):
         return self._binary_op(
             "combine", other, _axis=0, func=func, fill_value=fill_value, **kwargs
@@ -714,11 +705,6 @@ class BasePandasDataset(object):
 
     def combine_first(self, other):
         return self._binary_op("combine_first", other, _axis=0)
-
-    def compound(self, axis=None, skipna=None, level=None):
-        return self._default_to_pandas(
-            "compound", axis=axis, skipna=skipna, level=level
-        )
 
     def copy(self, deep=True):
         """Creates a shallow copy of the DataFrame.
@@ -885,7 +871,18 @@ class BasePandasDataset(object):
                 # This is the error that pandas throws.
                 raise ValueError("No objects to concatenate")
         if percentiles is not None:
-            pandas.DataFrame()._check_percentile(percentiles)
+            # explicit conversion of `percentiles` to list
+            percentiles = list(percentiles)
+
+            # get them all to be in [0, 1]
+            validate_percentile(percentiles)
+
+            # median should always be included
+            if 0.5 not in percentiles:
+                percentiles.append(0.5)
+            percentiles = np.asarray(percentiles)
+        else:
+            percentiles = np.array([0.25, 0.5, 0.75])
         return self.__constructor__(
             query_compiler=self._query_compiler.describe(
                 percentiles=percentiles, include=include, exclude=exclude
@@ -1050,12 +1047,7 @@ class BasePandasDataset(object):
         inplace = validate_bool_kwarg(inplace, "inplace")
 
         if is_list_like(axis):
-            axis = [self._get_axis_number(ax) for ax in axis]
-            result = self
-
-            for ax in axis:
-                result = result.dropna(axis=ax, how=how, thresh=thresh, subset=subset)
-            return self._create_or_update_from_compiler(result._query_compiler, inplace)
+            raise TypeError("supplying multiple axes to axis is no longer supported.")
 
         axis = self._get_axis_number(axis)
         if how is not None and how not in ["any", "all"]:
@@ -1356,31 +1348,6 @@ class BasePandasDataset(object):
             return self.__getitem__(key)
         else:
             return default
-
-    def get_dtype_counts(self):
-        """Get the counts of dtypes in this object.
-
-        Returns:
-            The counts of dtypes in this object.
-        """
-        if hasattr(self, "dtype"):
-            return pandas.Series({str(self.dtype): 1})
-        result = self.dtypes.value_counts()
-        result.index = result.index.map(lambda x: str(x))
-        return result
-
-    def get_ftype_counts(self):
-        """Get the counts of ftypes in this object.
-
-        Returns:
-            The counts of ftypes in this object.
-        """
-        if hasattr(self, "ftype"):
-            return pandas.Series({self.ftype: 1})
-        return self.ftypes.value_counts().sort_index()
-
-    def get_values(self):
-        return self._default_to_pandas("get_values")
 
     def gt(self, other, axis="columns", level=None):
         """Checks element-wise that this is greater than other.
@@ -1941,7 +1908,7 @@ class BasePandasDataset(object):
                 raise ValueError("need at least one array to concatenate")
 
         # check that all qs are between 0 and 1
-        pandas.DataFrame()._check_percentile(q)
+        validate_percentile(q)
         axis = self._get_axis_number(axis)
 
         if isinstance(q, (pandas.Series, np.ndarray, pandas.Index, list)):
@@ -2560,11 +2527,6 @@ class BasePandasDataset(object):
             obj.set_axis(labels, axis=axis, inplace=True)
             return obj
 
-    def set_value(self, index, col, value, takeable=False):
-        return self._default_to_pandas(
-            "set_value", index, col, value, takeable=takeable
-        )
-
     def shift(self, periods=1, freq=None, axis=0, fill_value=None):
         return self._default_to_pandas(
             "shift", periods=periods, freq=freq, axis=axis, fill_value=fill_value
@@ -3044,9 +3006,6 @@ class BasePandasDataset(object):
             "to_pickle", path, compression=compression, protocol=protocol
         )
 
-    def to_sparse(self, fill_value=None, kind="block"):
-        return self._default_to_pandas("to_sparse", fill_value=fill_value, kind=kind)
-
     def to_string(
         self,
         buf=None,
@@ -3412,24 +3371,6 @@ class BasePandasDataset(object):
 
     def __xor__(self, other):
         return self._binary_op("__xor__", other, axis=0)
-
-    @property
-    def blocks(self):
-        def blocks(df):
-            """Defined because properties do not have a __name__"""
-            return df.blocks
-
-        return self._default_to_pandas(blocks)
-
-    @property
-    def is_copy(self):
-        warnings.warn(
-            "Attribute `is_copy` is deprecated and will be removed in a "
-            "future version.",
-            FutureWarning,
-        )
-        # Pandas doesn't do anything so neither do we.
-        return
 
     @property
     def size(self):

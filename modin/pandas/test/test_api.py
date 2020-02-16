@@ -75,7 +75,8 @@ def test_top_level_api_equality():
                     {
                         i: pandas_sig[i]
                         for i in pandas_sig.keys()
-                        if i not in modin_sig or pandas_sig[i] != modin_sig[i]
+                        if i not in modin_sig
+                        or pandas_sig[i] != modin_sig[i]
                         and not (
                             pandas_sig[i].default is np.nan
                             and modin_sig[i].default is np.nan

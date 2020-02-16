@@ -117,7 +117,9 @@ def lreshape(data: DataFrame, groups, dropna=True, label=None):
     )
 
 
-def wide_to_long(df: DataFrame, stubnames, i, j, sep: str = "", suffix: str = r"\d+") -> DataFrame:
+def wide_to_long(
+    df: DataFrame, stubnames, i, j, sep: str = "", suffix: str = r"\d+"
+) -> DataFrame:
     if not isinstance(df, DataFrame):
         raise ValueError(
             "can not wide_to_long with instance of type {}".format(type(df))

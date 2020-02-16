@@ -734,13 +734,6 @@ def test_argsort(data):
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_as_blocks(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        modin_series.as_blocks()
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
 def test_as_matrix(data):
     modin_series, _ = create_test_series(data)  # noqa: F841
     modin_series.as_matrix()
@@ -901,13 +894,6 @@ def test_bfill(data):
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_blocks(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        _ = modin_series.blocks
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
 def test_bool(data):
     modin_series, pandas_series = create_test_series(data)
 
@@ -937,34 +923,6 @@ def test_clip(request, data):
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_clip_lower(request, data):
-    modin_series, pandas_series = create_test_series(data)
-
-    if name_contains(request.node.name, numeric_dfs):
-        # set bounds
-        lower = random_state.random_integers(RAND_LOW, RAND_HIGH, 1)[0]
-
-        # test lower scalar bound
-        pandas_result = pandas_series.clip_lower(lower)
-        modin_result = modin_series.clip_lower(lower)
-        df_equals(modin_result, pandas_result)
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_clip_upper(request, data):
-    modin_series, pandas_series = create_test_series(data)
-
-    if name_contains(request.node.name, numeric_dfs):
-        # set bounds
-        upper = random_state.random_integers(RAND_LOW, RAND_HIGH, 1)[0]
-
-        # test upper scalar bound
-        modin_result = modin_series.clip_upper(upper)
-        pandas_result = pandas_series.clip_upper(upper)
-        df_equals(modin_result, pandas_result)
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
 def test_combine(data):
     modin_series, _ = create_test_series(data)  # noqa: F841
     modin_series2 = modin_series % (max(modin_series) // 2)
@@ -979,13 +937,6 @@ def test_combine_first(data):
     modin_result = modin_series.combine_first(modin_series2)
     pandas_result = pandas_series.combine_first(pandas_series2)
     df_equals(modin_result, pandas_result)
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_compound(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        modin_series.compound()
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
@@ -1430,32 +1381,6 @@ def test_get(data):
         modin_series.get("NO_EXIST", "DEFAULT"),
         pandas_series.get("NO_EXIST", "DEFAULT"),
     )
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_get_dtype_counts(data):
-    modin_series, pandas_series = create_test_series(data)
-    df_equals(modin_series.get_dtype_counts(), pandas_series.get_dtype_counts())
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_get_ftype_counts(data):
-    modin_series, pandas_series = create_test_series(data)
-    df_equals(modin_series.get_ftype_counts(), pandas_series.get_ftype_counts())
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_get_value(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        modin_series.get_value(0)
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_get_values(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        modin_series.get_values()
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
@@ -2307,13 +2232,6 @@ def test_set_axis(data):
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_set_value(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        modin_series.set_value(5, 6)
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
 def test_shape(data):
     modin_series, pandas_series = create_test_series(data)
     assert modin_series.shape == pandas_series.shape
@@ -2581,13 +2499,6 @@ def test_to_period():
 def test_to_numpy(data):
     modin_series, pandas_series = create_test_series(data)
     assert_array_equal(modin_series.values, pandas_series.values)
-
-
-@pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)
-def test_to_sparse(data):
-    modin_series, _ = create_test_series(data)  # noqa: F841
-    with pytest.warns(UserWarning):
-        modin_series.to_sparse()
 
 
 @pytest.mark.parametrize("data", test_data_values, ids=test_data_keys)

@@ -75,7 +75,7 @@ def _make_parser_func(sep):
         chunksize=None,
         compression="infer",
         thousands=None,
-        decimal: str=".",
+        decimal: str = ".",
         lineterminator=None,
         quotechar='"',
         quoting=0,
@@ -217,7 +217,7 @@ def read_excel(
     skipfooter=0,
     convert_float=True,
     mangle_dupe_cols=True,
-    **kwds
+    **kwds,
 ):
     _, _, _, kwargs = inspect.getargvalues(inspect.currentframe())
     kwargs.update(kwargs.pop("kwds", {}))
@@ -231,7 +231,8 @@ def read_excel(
         return DataFrame(query_compiler=intermediate)
 
 
-def read_hdf(path_or_buf,
+def read_hdf(
+    path_or_buf,
     key=None,
     mode: str = "r",
     errors: str = "strict",
@@ -248,7 +249,7 @@ def read_hdf(path_or_buf,
     return DataFrame(query_compiler=BaseFactory.read_hdf(**kwargs))
 
 
-def read_feather(path, columns=None, use_threads: bool=True):
+def read_feather(path, columns=None, use_threads: bool = True):
     _, _, _, kwargs = inspect.getargvalues(inspect.currentframe())
     return DataFrame(query_compiler=BaseFactory.read_feather(**kwargs))
 
@@ -282,7 +283,9 @@ def read_sas(
     return DataFrame(query_compiler=BaseFactory.read_sas(**kwargs))
 
 
-def read_pickle(filepath_or_buffer: FilePathOrBuffer, compression: Optional[str] = "infer"):
+def read_pickle(
+    filepath_or_buffer: FilePathOrBuffer, compression: Optional[str] = "infer"
+):
     _, _, _, kwargs = inspect.getargvalues(inspect.currentframe())
     return DataFrame(query_compiler=BaseFactory.read_pickle(**kwargs))
 
@@ -337,7 +340,7 @@ def read_fwf(
     colspecs="infer",
     widths=None,
     infer_nrows=100,
-    **kwds
+    **kwds,
 ):
     _, _, _, kwargs = inspect.getargvalues(inspect.currentframe())
     kwargs.update(kwargs.pop("kwds", {}))
@@ -381,10 +384,17 @@ def read_spss(
     )
 
 
-def to_pickle(obj: Any, filepath_or_buffer: Union[str, pathlib.Path], compression: Optional[str] = "infer", protocol: int = 4):
+def to_pickle(
+    obj: Any,
+    filepath_or_buffer: Union[str, pathlib.Path],
+    compression: Optional[str] = "infer",
+    protocol: int = 4,
+):
     if isinstance(obj, DataFrame):
         obj = obj._query_compiler
-    return BaseFactory.to_pickle(obj, filepath_or_buffer, compression=compression, protocol=protocol)
+    return BaseFactory.to_pickle(
+        obj, filepath_or_buffer, compression=compression, protocol=protocol
+    )
 
 
 class ExcelFile(pandas.ExcelFile):

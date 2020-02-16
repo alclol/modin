@@ -351,11 +351,6 @@ class DataFrame(BasePandasDataset):
                     result.name = None
             return result
 
-    def get_value(self, index, col, takeable=False):
-        return self._default_to_pandas(
-            pandas.DataFrame.get_value, index, col, takeable=takeable
-        )
-
     def groupby(
         self,
         by=None,

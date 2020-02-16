@@ -572,11 +572,6 @@ class Series(BasePandasDataset):
         new_self, new_other = self._prepare_inter_op(other)
         return super(Series, new_self).ge(new_other, level=level, axis=axis)
 
-    def get_value(self, label, takeable=False):
-        return self._default_to_pandas(
-            pandas.Series.get_value, label, takeable=takeable
-        )
-
     def groupby(
         self,
         by=None,
