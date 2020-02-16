@@ -58,18 +58,41 @@ class BaseQueryPlanner(object):
     @classmethod
     def execute_plan(cls, obj):
         assert obj in cls.plan
-        if isinstance(cls.plan[obj], BasePandasFrame):
+        if isinstance(
+            cls.plan[obj], (BasePandasFrame, pandas.DataFrame, pandas.Series)
+        ):
             return cls.plan[obj]
         parent, op, args, kwargs = cls.plan[obj]
-        if parent is not None or not isinstance(parent, BasePandasFrame):
+        if parent is not None:
+            if cls.rewrite_plan(obj):
+                return cls.plan[obj]
             parent = cls.execute_plan(parent)
-            cls.plan[obj] = op(parent, *args, **kwargs)
-            return cls.plan[obj]
-        elif isinstance(parent, BasePandasFrame):
+            print("Executing {}".format(op))
             cls.plan[obj] = op(parent, *args, **kwargs)
             return cls.plan[obj]
         else:
             return obj
+
+    @classmethod
+    def rewrite_plan(cls, obj):
+        parent, op, args, kwargs = cls.plan[obj]
+        if op == BasePandasFrame.mask:
+            if isinstance(
+                cls.plan[parent], (BasePandasFrame, pandas.DataFrame, pandas.Series)
+            ):
+                return False
+            parent_parent, parent_op, parent_args, parent_kwargs = cls.plan[parent]
+            if parent_op in [BasePandasFrame._map, BasePandasFrame._map_reduce]:
+                if not isinstance(
+                    parent_parent, (BasePandasFrame, pandas.DataFrame, pandas.Series)
+                ):
+                    return False
+                print("Rewrite {} before {}".format(op, parent_op))
+                cls.plan[obj] = parent_op(
+                    op(parent_parent, *args, **kwargs), *parent_args, **parent_kwargs
+                )
+                return True
+        return False
 
 
 class BasePandasFrame(object):
@@ -97,6 +120,7 @@ class BasePandasFrame(object):
             "_join_index_objects",
             "_filter_empties",
             "_apply_index_objs",
+            "_get_dict_of_block_index",
         ]:
             return object.__getattribute__(self, item)
 
@@ -105,7 +129,6 @@ class BasePandasFrame(object):
             BaseQueryPlanner.add_to_plan(new_lazy_frame)
             return new_lazy_frame
 
-        print(item)
         return lazy_call
 
     @property
@@ -1469,6 +1492,23 @@ class LazyBasePandasFrame(BasePandasFrame):
                 return cls.lazy_obj_cache[op][parent][idx]
         return cls(parent, op, original_args, kwargs)
 
+    @classmethod
+    def infer_metadata(cls, parent, op, args, kwargs, axis):
+        if op == BasePandasFrame.mask:
+            if axis == "index":
+                return parent.index
+            if axis == "columns":
+                if kwargs.get("col_indices", None) is not None:
+                    return pandas.Index(kwargs.get("col_indices"))
+                else:
+                    return parent.columns[kwargs.get("col_numeric_idx")]
+        elif op == BasePandasFrame._map:
+            if axis == "index":
+                return parent.index
+            if axis == "columns":
+                return parent.columns
+        raise ValueError("{} not yet supported".format(op))
+
     def __init__(self, parent, op, args, kwargs):
         self.parent = parent
         self.op = op
@@ -1488,5 +1528,9 @@ class LazyBasePandasFrame(BasePandasFrame):
         ]:
             if item in ["parent", "op", "args", "kwargs"]:
                 return object.__getattribute__(self, item)
+            elif item in ["index", "columns"]:
+                return LazyBasePandasFrame.infer_metadata(
+                    self.parent, self.op, self.args, self.kwargs, item
+                )
             return object.__getattribute__(BaseQueryPlanner.execute_plan(self), item)
         return super(LazyBasePandasFrame, self).__getattribute__(item)
