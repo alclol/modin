@@ -36,7 +36,7 @@ def _compute_lengths(lengths_list, n, from_back=False):
         if idx == len(lengths_list) - 1:
             return [n]
         return [
-            lengths_list[i] if i > idx else n - sum(lengths_list[i + 1:])
+            lengths_list[i] if i > idx else n - sum(lengths_list[i + 1 :])
             for i in range(len(lengths_list))
             if i >= idx
         ]
@@ -48,7 +48,12 @@ class BaseQueryPlanner(object):
     @classmethod
     def add_to_plan(cls, lazy_obj):
         if lazy_obj not in cls.plan:
-            cls.plan[lazy_obj] = (lazy_obj.parent, lazy_obj.op, lazy_obj.args, lazy_obj.kwargs)
+            cls.plan[lazy_obj] = (
+                lazy_obj.parent,
+                lazy_obj.op,
+                lazy_obj.args,
+                lazy_obj.kwargs,
+            )
 
     @classmethod
     def execute_plan(cls, obj):
@@ -77,13 +82,29 @@ class BasePandasFrame(object):
             op = getattr(BasePandasFrame, item)
         except AttributeError:
             op = None
-        if not callable(op) or item in ["__init__", "__constructor__", "__class__", "to_pandas", "_row_lengths", "_column_widths", "dtypes", "axes", "_dtypes", "_compute_map_reduce_metadata", "_build_mapreduce_func", "_join_index_objects", "_filter_empties", "_apply_index_objs"]:
+        if not callable(op) or item in [
+            "__init__",
+            "__constructor__",
+            "__class__",
+            "to_pandas",
+            "_row_lengths",
+            "_column_widths",
+            "dtypes",
+            "axes",
+            "_dtypes",
+            "_compute_map_reduce_metadata",
+            "_build_mapreduce_func",
+            "_join_index_objects",
+            "_filter_empties",
+            "_apply_index_objs",
+        ]:
             return object.__getattribute__(self, item)
 
         def lazy_call(*args, **kwargs):
             new_lazy_frame = LazyBasePandasFrame.create(self, op, args, kwargs)
             BaseQueryPlanner.add_to_plan(new_lazy_frame)
             return new_lazy_frame
+
         print(item)
         return lazy_call
 
@@ -1459,7 +1480,12 @@ class LazyBasePandasFrame(BasePandasFrame):
 
     def __getattribute__(self, item):
         op = getattr(LazyBasePandasFrame, item)
-        if not callable(op) or item in ["__init__", "__constructor__", "__class__", "to_pandas"]:
+        if not callable(op) or item in [
+            "__init__",
+            "__constructor__",
+            "__class__",
+            "to_pandas",
+        ]:
             if item in ["parent", "op", "args", "kwargs"]:
                 return object.__getattribute__(self, item)
             return object.__getattribute__(BaseQueryPlanner.execute_plan(self), item)

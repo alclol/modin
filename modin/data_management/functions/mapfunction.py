@@ -8,9 +8,7 @@ class MapFunction(Function):
             func = lambda x: function(x, *args, **kwargs)
             func._pandas_func = function
             return query_compiler.__constructor__(
-                query_compiler._modin_frame._map(
-                    func, *call_args, **call_kwds
-                )
+                query_compiler._modin_frame._map(func, *call_args, **call_kwds)
             )
 
         return caller
