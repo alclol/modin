@@ -66,6 +66,7 @@ class BaseQueryPlanner(object):
         if parent is not None:
             if cls.rewrite_plan(obj):
                 return cls.plan[obj]
+            parent, op, args, kwargs = cls.plan[obj]
             parent = cls.execute_plan(parent)
             print("Executing {}".format(op))
             cls.plan[obj] = op(parent, *args, **kwargs)
@@ -91,6 +92,14 @@ class BaseQueryPlanner(object):
                 cls.plan[obj] = parent_op(
                     op(parent_parent, *args, **kwargs), *parent_args, **parent_kwargs
                 )
+                return True
+            elif parent_op == BasePandasFrame.mask:
+                if isinstance(parent_parent, LazyBasePandasFrame):
+                    print("Rewrite masks")
+                    cls.plan[obj] = parent_parent, op, args, {**kwargs, **parent_kwargs}
+                    return cls.rewrite_plan(obj)
+                print("Combine masks")
+                cls.plan[obj] = op(parent_parent, *args, **kwargs, **parent_kwargs)
                 return True
         return False
 
@@ -121,6 +130,10 @@ class BasePandasFrame(object):
             "_filter_empties",
             "_apply_index_objs",
             "_get_dict_of_block_index",
+            "head",
+            "tail",
+            "front",
+            "back",
         ]:
             return object.__getattribute__(self, item)
 
@@ -1368,6 +1381,7 @@ class BasePandasFrame(object):
         # allows the implementation to stay modular and reduces data copying.
         if n < 0:
             n = max(0, len(self.index) + n)
+        return self.mask(row_numeric_idx=list(range(n)))
         new_row_lengths = _compute_lengths(self._row_lengths, n)
         new_partitions = self._frame_mgr_cls.take(
             0, self._partitions, self._row_lengths, n
@@ -1393,6 +1407,9 @@ class BasePandasFrame(object):
         # See head for an explanation of the transposed behavior
         if n < 0:
             n = max(0, len(self.index) + n)
+        return self.mask(
+            row_numeric_idx=list(range(len(self.index) - n, len(self.index)))
+        )
         new_row_lengths = _compute_lengths(self._row_lengths, n, from_back=True)
         new_partitions = self._frame_mgr_cls.take(
             0, self._partitions, self._row_lengths, -n
@@ -1415,6 +1432,7 @@ class BasePandasFrame(object):
         Returns:
             A new dataframe.
         """
+        return self.mask(col_numeric_idx=list(range(n)))
         new_col_lengths = _compute_lengths(self._column_widths, n)
         new_partitions = self._frame_mgr_cls.take(
             1, self._partitions, self._column_widths, n
@@ -1437,6 +1455,9 @@ class BasePandasFrame(object):
         Returns:
             A new dataframe.
         """
+        return self.mask(
+            col_numeric_idx=list(range(len(self.columns) - n, len(self.columns)))
+        )
         new_col_lengths = _compute_lengths(self._column_widths, n, from_back=True)
         new_partitions = self._frame_mgr_cls.take(
             1, self._partitions, self._column_widths, -n
