@@ -76,7 +76,12 @@ class BaseQueryPlanner(object):
 
     @classmethod
     def rewrite_plan(cls, obj):
+        if isinstance(cls.plan[obj], BasePandasFrame):
+            return False
         parent, op, args, kwargs = cls.plan[obj]
+        if isinstance(parent, LazyBasePandasFrame):
+            cls.rewrite_plan(parent)
+            parent, op, args, kwargs = cls.plan[obj]
         if op == BasePandasFrame.mask:
             if isinstance(
                 cls.plan[parent], (BasePandasFrame, pandas.DataFrame, pandas.Series)
@@ -89,6 +94,7 @@ class BaseQueryPlanner(object):
                 ):
                     return False
                 print("Rewrite {} before {}".format(op, parent_op))
+                print("Executing {}".format(parent_op))
                 cls.plan[obj] = parent_op(
                     op(parent_parent, *args, **kwargs), *parent_args, **parent_kwargs
                 )
@@ -101,6 +107,34 @@ class BaseQueryPlanner(object):
                 print("Combine masks")
                 cls.plan[obj] = op(parent_parent, *args, **kwargs, **parent_kwargs)
                 return True
+        if op == BasePandasFrame._map:
+            if isinstance(cls.plan[parent], BasePandasFrame):
+                return False
+            parent_parent, parent_op, parent_args, parent_kwargs = cls.plan[parent]
+            if parent_op in [BasePandasFrame._map, BasePandasFrame._map_reduce]:
+                if isinstance(parent_parent, LazyBasePandasFrame):
+                    "Lazy"
+                    return False
+                parent_mapper = parent_args[0]
+                self_mapper = args[0]
+                parent_dtypes = parent_kwargs.get("dtypes", None)
+                self_dtypes = kwargs.get("dtypes", None)
+                if parent_dtypes == "copy":
+                    new_dtypes = self_dtypes
+                elif parent_dtypes is None:
+                    new_dtypes = None
+                elif parent_dtypes == np.bool:
+                    if self_dtypes == "copy" or self_dtypes == np.bool:
+                        new_dtypes = np.bool
+                    elif self_dtypes is None:
+                        new_dtypes = None
+                    else:
+                        raise ValueError("Dtypes not recognized: {} and {}".format(parent_dtypes, self_dtypes))
+                else:
+                    raise ValueError("Dtypes not recognized: {} and {}".format(parent_dtypes, self_dtypes))
+                print("Combine maps")
+                cls.plan[obj] = (parent_parent, op, (lambda g: self_mapper(parent_mapper(g)),), dict(dtypes=new_dtypes))
+                return False
         return False
 
 
