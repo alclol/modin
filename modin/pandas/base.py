@@ -583,20 +583,6 @@ class BasePandasDataset(object):
         query_compiler = self._query_compiler.apply(func, axis, args=args, **kwds)
         return query_compiler
 
-    def as_matrix(self, columns=None):
-        """Convert the frame to its Numpy-array representation.
-
-        Args:
-            columns: If None, return all columns, otherwise,
-                returns specified columns.
-
-        Returns:
-            values: ndarray
-        """
-        if columns is None:
-            return self.to_numpy()
-        return self.__getitem__(columns).to_numpy()
-
     def asfreq(self, freq, method=None, how=None, normalize=False, fill_value=None):
         return self._default_to_pandas(
             "asfreq",
@@ -1412,13 +1398,28 @@ class BasePandasDataset(object):
         """
         if not all(d != np.dtype("O") for d in self._get_dtypes()):
             raise TypeError("reduction operation 'argmin' not allowed for this dtype")
-        axis = self._get_axis_number(axis)
+        axis = self._get_axis_number(axis) if axis is not None else 0
         return self._reduce_dimension(
             self._query_compiler.idxmin(axis=axis, skipna=skipna)
         )
 
     def infer_objects(self):
         return self._default_to_pandas("infer_objects")
+
+    def convert_dtypes(
+        self,
+        infer_objects: bool = True,
+        convert_string: bool = True,
+        convert_integer: bool = True,
+        convert_boolean: bool = True,
+    ):
+        return self._default_to_pandas(
+            "convert_dtypes",
+            infer_objects=infer_objects,
+            convert_string=convert_string,
+            convert_integer=convert_integer,
+            convert_boolean=convert_boolean,
+        )
 
     def isin(self, values):
         """Fill a DataFrame with booleans for cells contained in values.
@@ -1448,10 +1449,6 @@ class BasePandasDataset(object):
         return self.__constructor__(query_compiler=self._query_compiler.isna())
 
     isnull = isna
-
-    @property
-    def ix(self, axis=None):
-        raise ErrorMessage.not_implemented("ix is not implemented.")
 
     @property
     def iloc(self):
@@ -2490,7 +2487,7 @@ class BasePandasDataset(object):
             **kwargs
         )
 
-    def set_axis(self, labels, axis=0, inplace=None):
+    def set_axis(self, labels, axis=0, inplace=False):
         """Assign desired index to given axis.
 
         Args:
@@ -2511,15 +2508,6 @@ class BasePandasDataset(object):
                 stacklevel=2,
             )
             labels, axis = axis, labels
-        if inplace is None:
-            warnings.warn(
-                "set_axis currently defaults to operating inplace.\nThis "
-                "will change in a future version of pandas, use "
-                "inplace=True to avoid this warning.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            inplace = True
         if inplace:
             setattr(self, pandas.DataFrame()._get_axis_name(axis), labels)
         else:
@@ -2571,6 +2559,7 @@ class BasePandasDataset(object):
         na_position="last",
         sort_remaining=True,
         by=None,
+        ignore_index: bool = False,
     ):
         """Sort a DataFrame by one of the indices (columns or index).
 
@@ -2626,9 +2615,10 @@ class BasePandasDataset(object):
         by,
         axis=0,
         ascending=True,
-        inplace=False,
+        inplace: bool = False,
         kind="quicksort",
         na_position="last",
+        ignore_index: bool = False,
     ):
         """Sorts by a column/row or list of columns/rows.
 
@@ -2780,7 +2770,7 @@ class BasePandasDataset(object):
         idx = self.index if axis == 0 else self.columns
         return self.set_axis(idx.swaplevel(i, j), axis=axis, inplace=False)
 
-    def take(self, indices, axis=0, is_copy=True, **kwargs):
+    def take(self, indices, axis=0, is_copy=False, **kwargs):
         axis = self._get_axis_number(axis)
         slice_obj = indices if axis == 0 else (slice(None), indices)
         result = self.iloc[slice_obj]
@@ -2850,9 +2840,6 @@ class BasePandasDataset(object):
         }
         return self._default_to_pandas("to_csv", **kwargs)
 
-    def to_dense(self):  # pragma: no cover
-        return self._default_to_pandas("to_dense")
-
     def to_dict(self, orient="dict", into=dict):  # pragma: no cover
         return self._default_to_pandas("to_dict", orient=orient, into=into)
 
@@ -2912,6 +2899,7 @@ class BasePandasDataset(object):
         lines=False,
         compression="infer",
         index=True,
+        indent=None,
     ):  # pragma: no cover
         return self._default_to_pandas(
             "to_json",
@@ -2925,6 +2913,7 @@ class BasePandasDataset(object):
             lines=lines,
             compression=compression,
             index=index,
+            indent=indent,
         )
 
     def to_latex(
@@ -2948,6 +2937,8 @@ class BasePandasDataset(object):
         multicolumn=None,
         multicolumn_format=None,
         multirow=None,
+        caption=None,
+        label=None,
     ):  # pragma: no cover
         return self._default_to_pandas(
             "to_latex",
@@ -2970,14 +2961,12 @@ class BasePandasDataset(object):
             multicolumn=multicolumn,
             multicolumn_format=multicolumn_format,
             multirow=multirow,
+            caption=None,
+            label=None,
         )
 
-    def to_msgpack(
-        self, path_or_buf=None, encoding="utf-8", **kwargs
-    ):  # pragma: no cover
-        return self._default_to_pandas(
-            "to_msgpack", path_or_buf=path_or_buf, encoding=encoding, **kwargs
-        )
+    def to_markdown(self, buf=None, mode=None, **kwargs):
+        return self._default_to_pandas("to_markdown", buf=buf, mode=mode, **kwargs)
 
     def to_numpy(self, dtype=None, copy=False):
         """Convert the DataFrame to a NumPy array.

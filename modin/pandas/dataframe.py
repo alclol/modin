@@ -680,13 +680,6 @@ class DataFrame(BasePandasDataset):
         )
 
     @classmethod
-    def from_items(cls, items, columns=None, orient="columns"):  # pragma: no cover
-        ErrorMessage.default_to_pandas("`from_items`")
-        return from_pandas(
-            pandas.DataFrame.from_items(items, columns=columns, orient=orient)
-        )
-
-    @classmethod
     def from_records(
         cls,
         data,
@@ -2143,6 +2136,13 @@ class DataFrame(BasePandasDataset):
 
     def __rdiv__(self, other, axis=None, level=None, fill_value=None):
         return self.rdiv(other, axis=axis, level=level, fill_value=fill_value)
+
+    @property
+    def attrs(self):
+        def attrs(df):
+            return df.attrs
+
+        self._default_to_pandas(attrs)
 
     @property
     def __doc__(self):  # pragma: no cover

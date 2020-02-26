@@ -1,5 +1,6 @@
 import numpy as np
 import pandas
+import pandas._libs.lib as lib
 from pandas.core.common import is_bool_indexer
 from pandas.core.dtypes.common import (
     is_dict_like,
@@ -451,13 +452,13 @@ class Series(BasePandasDataset):
                 result.name = None
             return result
 
-    def argmax(self, axis=0, skipna=True, *args, **kwargs):
+    def argmax(self, axis=None, skipna=True, *args, **kwargs):
         # Series and DataFrame have a different behavior for `skipna`
         if skipna is None:
             skipna = True
         return self.idxmax(axis=axis, skipna=skipna, *args, **kwargs)
 
-    def argmin(self, axis=0, skipna=True, *args, **kwargs):
+    def argmin(self, axis=None, skipna=True, *args, **kwargs):
         # Series and DataFrame have a different behavior for `skipna`
         if skipna is None:
             skipna = True
@@ -482,16 +483,6 @@ class Series(BasePandasDataset):
     def combine(self, other, func, fill_value=None):
         return super(Series, self).combine(
             other, lambda s1, s2: s1.combine(s2, func, fill_value=fill_value)
-        )
-
-    def compound(self, axis=None, skipna=None, level=None):
-        return self._default_to_pandas(
-            pandas.Series.compound, axis=axis, skipna=skipna, level=level
-        )
-
-    def compress(self, condition, *args, **kwargs):
-        return self._default_to_pandas(
-            pandas.Series.compress, condition, *args, **kwargs
         )
 
     def corr(self, other, method="pearson", min_periods=None):
@@ -526,8 +517,7 @@ class Series(BasePandasDataset):
     def drop_duplicates(self, keep="first", inplace=False):
         return super(Series, self).drop_duplicates(keep=keep, inplace=inplace)
 
-    def dropna(self, axis=0, inplace=False, **kwargs):
-        kwargs.pop("how", None)
+    def dropna(self, axis=0, inplace=False, how=None, **kwargs):
         if kwargs:
             raise TypeError(
                 "dropna() got an unexpected keyword "
@@ -562,11 +552,6 @@ class Series(BasePandasDataset):
         return super(Series, new_self).floordiv(
             new_other, level=level, fill_value=None, axis=axis
         )
-
-    def from_array(
-        self, arr, index=None, name=None, dtype=None, copy=False, fastpath=False
-    ):
-        raise NotImplementedError("Not Yet implemented.")
 
     def ge(self, other, level=None, fill_value=None, axis=0):
         new_self, new_other = self._prepare_inter_op(other)
@@ -745,9 +730,6 @@ class Series(BasePandasDataset):
     def nlargest(self, n=5, keep="first"):
         return self._default_to_pandas(pandas.Series.nlargest, n=n, keep=keep)
 
-    def nonzero(self):
-        return self.to_numpy().nonzero()
-
     def nsmallest(self, n=5, keep="first"):
         return self._default_to_pandas(pandas.Series.nsmallest, n=n, keep=keep)
 
@@ -810,20 +792,6 @@ class Series(BasePandasDataset):
         )
 
     product = prod
-
-    def ptp(self, axis=None, skipna=None, level=None, numeric_only=None, **kwargs):
-        return self._default_to_pandas(
-            pandas.Series.ptp,
-            axis=axis,
-            skipna=skipna,
-            level=level,
-            numeric_only=numeric_only,
-            **kwargs
-        )
-
-    def put(self, *args, **kwargs):
-        return self._default_to_pandas(pandas.Series.put, *args, **kwargs)
-
     radd = add
 
     def ravel(self, order="C"):
@@ -851,7 +819,16 @@ class Series(BasePandasDataset):
             fill_value=fill_value,
         )
 
-    def rename(self, index=None, **kwargs):
+    def rename(
+        self,
+        index=None,
+        *,
+        axis=None,
+        copy=True,
+        inplace=False,
+        level=None,
+        errors="ignore"
+    ):
         non_mapping = is_scalar(index) or (
             is_list_like(index) and not is_dict_like(index)
         )
@@ -939,9 +916,6 @@ class Series(BasePandasDataset):
             pandas.Series.searchsorted, value, side=side, sorter=sorter
         )
 
-    def set_value(self, label, value, takeable=False):
-        return self._default_to_pandas("set_value", label, value, takeable=takeable)
-
     def sort_values(
         self,
         axis=0,
@@ -949,6 +923,7 @@ class Series(BasePandasDataset):
         inplace=False,
         kind="quicksort",
         na_position="last",
+        ignore_index: bool = False,
     ):
         from .dataframe import DataFrame
 
@@ -1021,7 +996,7 @@ class Series(BasePandasDataset):
             return Series(dtype=self.dtype)
         return super(Series, self).tail(n)
 
-    def take(self, indices, axis=0, is_copy=False, **kwargs):
+    def take(self, indices, axis=0, is_copy=None, **kwargs):
         return super(Series, self).take(indices, axis=axis, is_copy=is_copy, **kwargs)
 
     def to_frame(self, name=None):
@@ -1035,7 +1010,7 @@ class Series(BasePandasDataset):
     def to_list(self):
         return self._default_to_pandas(pandas.Series.to_list)
 
-    def to_numpy(self, dtype=None, copy=False):
+    def to_numpy(self,  dtype=None, copy=False, na_value=lib.no_default, **kwargs):
         """Convert the Series to a NumPy array.
 
         Args:
@@ -1110,9 +1085,6 @@ class Series(BasePandasDataset):
     def update(self, other):
         return self._default_to_pandas(pandas.Series.update, other)
 
-    def valid(self, inplace=False, **kwargs):
-        return self._default_to_pandas(pandas.Series.valid, inplace=inplace, **kwargs)
-
     def value_counts(
         self, normalize=False, sort=True, ascending=False, bins=None, dropna=True
     ):
@@ -1155,36 +1127,19 @@ class Series(BasePandasDataset):
         raise NotImplementedError("Not Yet implemented.")
 
     @property
-    def asobject(self):
-        # We cannot default to pandas without a named function to call.
-        def asobject(df):
-            return df.asobject
+    def attrs(self):
+        def attrs(df):
+            return df.attrs
 
-        return self._default_to_pandas(asobject)
+        self._default_to_pandas(attrs)
 
     @property
     def axes(self):
         return [self.index]
 
     @property
-    def base(self):
-        # We cannot default to pandas without a named function to call.
-        def base(df):
-            return df.base
-
-        return self._default_to_pandas(base)
-
-    @property
     def cat(self):
         return self._default_to_pandas(pandas.Series.cat)
-
-    @property
-    def data(self):
-        # We cannot default to pandas without a named function to call.
-        def data(df):
-            return df.data
-
-        return self._default_to_pandas(data)
 
     @property
     def dt(self):
@@ -1201,24 +1156,8 @@ class Series(BasePandasDataset):
         return len(self.index) == 0
 
     @property
-    def flags(self):
-        # We cannot default to pandas without a named function to call.
-        def flags(df):
-            return df.flags
-
-        return self._default_to_pandas(flags)
-
-    @property
     def hasnans(self):
         return self.isna().sum() > 0
-
-    @property
-    def imag(self):
-        # We cannot default to pandas without a named function to call.
-        def imag(df):
-            return df.imag
-
-        return self._default_to_pandas(imag)
 
     @property
     def is_monotonic(self):
@@ -1253,14 +1192,6 @@ class Series(BasePandasDataset):
         return self._default_to_pandas(is_unique)
 
     @property
-    def itemsize(self):
-        # We cannot default to pandas without a named function to call.
-        def itemsize(df):
-            return df.itemsize
-
-        return self._default_to_pandas(itemsize)
-
-    @property
     def nbytes(self):
         # We cannot default to pandas without a named function to call.
         def nbytes(df):
@@ -1279,24 +1210,8 @@ class Series(BasePandasDataset):
         return 1
 
     @property
-    def real(self):
-        # We cannot default to pandas without a named function to call.
-        def real(df):
-            return df.real
-
-        return self._default_to_pandas(real)
-
-    @property
     def shape(self):
         return (len(self),)
-
-    @property
-    def strides(self):
-        # We cannot default to pandas without a named function to call.
-        def strides(df):
-            return df.strides
-
-        return self._default_to_pandas(strides)
 
     @property
     def str(self):

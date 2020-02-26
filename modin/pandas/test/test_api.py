@@ -43,6 +43,14 @@ def test_top_level_api_equality():
         "datetimes",
         "reshape",
         "execution_engine",
+        "types",
+        "sys",
+        "initialize_ray",
+        "datetime",
+        "ray",
+        "num_cpus",
+        "warnings",
+        "os",
     ]
 
     assert not len(
@@ -102,8 +110,12 @@ def test_dataframe_api_equality():
 
     ignore = ["timetuple"]
     missing_from_modin = set(pandas_dir) - set(modin_dir)
-    assert not len(missing_from_modin - set(ignore))
-    assert not len(set(modin_dir) - set(pandas_dir))
+    assert not len(
+        missing_from_modin - set(ignore)
+    ), "Differences found in API: {}".format(len(missing_from_modin - set(ignore)))
+    assert not len(
+        set(modin_dir) - set(pandas_dir)
+    ), "Differences found in API: {}".format(set(modin_dir) - set(pandas_dir))
 
     # These have to be checked manually
     allowed_different = ["to_hdf", "hist"]
@@ -129,7 +141,8 @@ def test_dataframe_api_equality():
                 {
                     i: pandas_sig[i]
                     for i in pandas_sig.keys()
-                    if pandas_sig[i] != modin_sig[i]
+                    if i not in modin_sig
+                    or pandas_sig[i].default != modin_sig[i].default
                     and not (
                         pandas_sig[i].default is np.nan
                         and modin_sig[i].default is np.nan
@@ -153,8 +166,12 @@ def test_series_api_equality():
 
     ignore = ["timetuple"]
     missing_from_modin = set(pandas_dir) - set(modin_dir)
-    assert not len(missing_from_modin - set(ignore)), missing_from_modin
-    assert not len(set(modin_dir) - set(pandas_dir)), set(modin_dir) - set(pandas_dir)
+    assert not len(
+        missing_from_modin - set(ignore)
+    ), "Differences found in API: {}".format(len(missing_from_modin - set(ignore)))
+    assert not len(
+        set(modin_dir) - set(pandas_dir)
+    ), "Differences found in API: {}".format(set(modin_dir) - set(pandas_dir))
 
     # These have to be checked manually
     allowed_different = ["to_hdf", "hist"]
@@ -178,7 +195,8 @@ def test_series_api_equality():
                 {
                     i: pandas_sig[i]
                     for i in pandas_sig.keys()
-                    if pandas_sig[i] != modin_sig[i]
+                    if i not in modin_sig
+                    or pandas_sig[i].default != modin_sig[i].default
                     and not (
                         pandas_sig[i].default is np.nan
                         and modin_sig[i].default is np.nan
