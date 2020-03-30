@@ -1,13 +1,13 @@
 import os
-from droplet.client.client import DropletConnection
+from cloudburst.client.client import CloudburstConnection
 
-droplet = None
+cloudburst = None
 
 
 def get_or_init_client():
-    global droplet
-    if droplet is None:
+    global cloudburst
+    if cloudburst is None:
         ip = os.environ.get("MODIN_IP", None)
         conn = os.environ.get("MODIN_CONNECTION", None)
-        droplet = DropletConnection(conn, ip)
-    return droplet
+        cloudburst = CloudburstConnection(conn, ip)
+    return cloudburst
