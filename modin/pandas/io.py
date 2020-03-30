@@ -106,6 +106,7 @@ def _make_parser_func(sep):
         float_precision=None,
     ):
         _, _, _, kwargs = inspect.getargvalues(inspect.currentframe())
+
         if not kwargs.get("sep", sep):
             kwargs["sep"] = "\t"
         return _read(**kwargs)
@@ -121,6 +122,9 @@ def _read(**kwargs):
               We only support local files for now.
         kwargs: Keyword arguments in pandas.read_csv
     """
+   # return
+   # print("BaseFactor is None??? ")
+   # print(BaseFactory is None)
     pd_obj = BaseFactory.read_csv(**kwargs)
     # This happens when `read_csv` returns a TextFileReader object for iterating through
     if isinstance(pd_obj, pandas.io.parsers.TextFileReader):
@@ -134,7 +138,6 @@ def _read(**kwargs):
 
 read_table = _make_parser_func(sep="\t")
 read_csv = _make_parser_func(sep=",")
-
 
 def read_json(
     path_or_buf=None,

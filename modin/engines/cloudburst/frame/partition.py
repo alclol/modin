@@ -4,12 +4,12 @@ import pandas
 from modin import __execution_engine__
 
 if __execution_engine__ == "Cloudburst":
-    from droplet.shared.reference import DropletReference
+    from cloudburst.shared.reference import CloudburstReference
     from modin.engines.cloudburst.utils import get_or_init_client
-    droplet = get_or_init_client()
+    cloudburst = get_or_init_client()
 
 
-def apply_list_of_funcs(droplet, funcs, df):
+def apply_list_of_funcs(cloudburst, funcs, df):
     for func, kwargs in funcs:
         df = func(df, **kwargs)
     return df
@@ -53,7 +53,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
              applied to it.
         """
         call_queue = self.call_queue + [[func, kwargs]]
-        func = droplet.register(
+        func = cloudburst.register(
             apply_list_of_funcs, "apply_list_of_funcs"
         )
         future = func(call_queue, self.future)
@@ -126,7 +126,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         import uuid
 
         ref = str(uuid.uuid4())
-        droplet.put_object(ref, obj)
+        cloudburst.put_object(ref, obj)
         return cls(DropletReference(ref, deserialize=True))
 
     @classmethod
