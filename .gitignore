@@ -168,3 +168,5 @@ cscope.out
 
 # Dask workspace
 dask-worker-space/
+
+.testmondata
