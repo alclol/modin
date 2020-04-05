@@ -227,7 +227,6 @@ class PandasOnDaskFactory(BaseFactory):
 
 
 class PandasOnCloudburstFactory(BaseFactory):
-
     from modin.engines.cloudburst.io import PandasOnCloudburstIO
 
     io_cls = PandasOnCloudburstIO
