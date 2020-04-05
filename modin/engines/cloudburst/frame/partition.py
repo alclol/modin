@@ -3,17 +3,10 @@ from modin.data_management.utils import length_fn_pandas, width_fn_pandas
 import pandas
 from modin import __execution_engine__
 
-if __execution_engine__ == "Cloudburst":
-    from cloudburst.shared.reference import CloudburstReference
-    from modin.engines.cloudburst.utils import get_or_init_client
-    cloudburst = get_or_init_client()
-
-
 def apply_list_of_funcs(cloudburst, funcs, df):
     for func, kwargs in funcs:
         df = func(df, **kwargs)
     return df
-
 
 class PandasOnCloudburstFramePartition(BaseFramePartition):
     def __init__(self, future, length=None, width=None, call_queue=None):
@@ -53,6 +46,12 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
              applied to it.
         """
         call_queue = self.call_queue + [[func, kwargs]]
+
+        if __execution_engine__ == "Cloudburst":
+            from cloudburst.shared.reference import CloudburstReference
+            from modin.engines.cloudburst.utils import get_or_init_client
+            cloudburst = get_or_init_client()
+
         func = cloudburst.register(
             apply_list_of_funcs, "apply_list_of_funcs"
         )

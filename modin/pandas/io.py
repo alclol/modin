@@ -108,9 +108,6 @@ def _read(**kwargs):
               We only support local files for now.
         kwargs: Keyword arguments in pandas.read_csv
     """
-   # return
-   # print("BaseFactor is None??? ")
-   # print(BaseFactory is None)
     pd_obj = BaseFactory.read_csv(**kwargs)
     # This happens when `read_csv` returns a TextFileReader object for iterating through
     if isinstance(pd_obj, pandas.io.parsers.TextFileReader):
