@@ -3,6 +3,9 @@ from modin.data_management.utils import length_fn_pandas, width_fn_pandas
 import pandas
 from modin import __execution_engine__
 
+if __execution_engine__ == "Cloudburst":
+    cloudburst = None
+
 def apply_list_of_funcs(cloudburst, funcs, df):
     for func, kwargs in funcs:
         df = func(df, **kwargs)
@@ -47,7 +50,8 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         """
         call_queue = self.call_queue + [[func, kwargs]]
 
-        if __execution_engine__ == "Cloudburst":
+        global cloudburst
+        if __execution_engine__ == "Cloudburst" and cloudburst is None:
             from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
