@@ -81,7 +81,7 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
         ]
 
 
-class PandasOnDaskFrameColumnPartition(PandasOnDaskFrameAxisPartition):
+class PandasOnCloudburstFrameColumnPartition(PandasOnCloudburstFrameAxisPartition):
     """The column partition implementation for Multiprocess. All of the implementation
         for this class is in the parent class, and this class defines the axis
         to perform the computation over.
@@ -90,7 +90,7 @@ class PandasOnDaskFrameColumnPartition(PandasOnDaskFrameAxisPartition):
     axis = 0
 
 
-class PandasOnDaskFrameRowPartition(PandasOnDaskFrameAxisPartition):
+class PandasOnCloudburstFrameRowPartition(PandasOnCloudburstFrameAxisPartition):
     """The row partition implementation for Multiprocess. All of the implementation
         for this class is in the parent class, and this class defines the axis
         to perform the computation over.
