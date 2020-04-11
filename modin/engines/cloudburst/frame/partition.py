@@ -3,9 +3,12 @@ from modin.data_management.utils import length_fn_pandas, width_fn_pandas
 import pandas
 from modin import __execution_engine__
 
+<<<<<<< HEAD
 if __execution_engine__ == "Cloudburst":
     cloudburst = None
 
+=======
+>>>>>>> 1a2f8460f6a1ae54a9ec4150583e92a63e7de202
 def apply_list_of_funcs(cloudburst, funcs, df):
     for func, kwargs in funcs:
         df = func(df, **kwargs)
