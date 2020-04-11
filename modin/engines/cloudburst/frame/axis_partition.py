@@ -2,8 +2,6 @@ from modin.engines.base.frame.axis_partition import PandasFrameAxisPartition
 from .partition import PandasOnCloudburstFramePartition
 from modin import __execution_engine__
 
-
-
 # TODO: Move to apply
 if __execution_engine__ == "Cloudburst":
   from cloudburst.shared.reference import CloudburstReference
@@ -81,7 +79,7 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
         ]
 
 
-class PandasOnDaskFrameColumnPartition(PandasOnDaskFrameAxisPartition):
+class PandasOnCloudburstFrameColumnPartition(PandasOnCloudburstFrameAxisPartition):
     """The column partition implementation for Multiprocess. All of the implementation
         for this class is in the parent class, and this class defines the axis
         to perform the computation over.
@@ -90,11 +88,10 @@ class PandasOnDaskFrameColumnPartition(PandasOnDaskFrameAxisPartition):
     axis = 0
 
 
-class PandasOnDaskFrameRowPartition(PandasOnDaskFrameAxisPartition):
+class PandasOnCloudburstFrameRowPartition(PandasOnCloudburstFrameAxisPartition):
     """The row partition implementation for Multiprocess. All of the implementation
         for this class is in the parent class, and this class defines the axis
         to perform the computation over.
     """
 
     axis = 1
->>>>>>> 1a2f8460f6a1ae54a9ec4150583e92a63e7de202
