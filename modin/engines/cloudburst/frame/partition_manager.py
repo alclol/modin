@@ -13,6 +13,7 @@ from .axis_partition import (
 
 if __execution_engine__ == "Cloudburst":
     cloudburst = None
+    import cloudpickle as pkl
 
 
     # TODO: Convert to Cloudburst
