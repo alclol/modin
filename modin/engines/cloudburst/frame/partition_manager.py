@@ -1,3 +1,5 @@
+import numpy as np
+
 from modin.engines.base.frame.partition_manager import BaseFrameManager
 from modin.engines.cloudburst.frame.partition import PandasOnCloudburstFramePartition
 from modin.error_message import ErrorMessage
@@ -11,6 +13,27 @@ from .axis_partition import (
 
 if __execution_engine__ == "Cloudburst":
     cloudburst = None
+
+
+    # TODO: Convert to Cloudburst
+    def deploy_func(df, other, apply_func, call_queue_df=None, call_queue_other=None):
+        if call_queue_df is not None and len(call_queue_df) > 0:
+            for call, kwargs in call_queue_df:
+                if isinstance(call, bytes):
+                    call = pkl.loads(call)
+                if isinstance(kwargs, bytes):
+                    kwargs = pkl.loads(kwargs)
+                df = call(df, **kwargs)
+        if call_queue_other is not None and len(call_queue_other) > 0:
+            for call, kwargs in call_queue_other:
+                if isinstance(call, bytes):
+                    call = pkl.loads(call)
+                if isinstance(kwargs, bytes):
+                    kwargs = pkl.loads(kwargs)
+                other = call(other, **kwargs)
+        if isinstance(apply_func, bytes):
+            apply_func = pkl.loads(apply_func)
+        return apply_func(df, other)
 
 class CloudburstFrameManager(BaseFrameManager):
     # This object uses DropletRemotePartition objects as the underlying store.
@@ -57,5 +80,48 @@ class CloudburstFrameManager(BaseFrameManager):
                 if len(partitions)
                 else []
             )
+        # TODO: Is gather valid
         new_idx = client.gather(new_idx)
         return new_idx[0].append(new_idx[1:]) if len(new_idx) else new_idx
+
+    @classmethod
+    def broadcast_apply(cls, axis, apply_func, left, right):
+
+        global cloudburst
+        if __execution_engine__ == "Cloudburst" and cloudburst is None:
+            from cloudburst.shared.reference import CloudburstReference
+            from modin.engines.cloudburst.utils import get_or_init_client
+            client = get_or_init_client()
+
+
+        right_parts = np.squeeze(right)
+        if len(right_parts.shape) == 0:
+            right_parts = np.array([right_parts.item()])
+        assert (
+            len(right_parts.shape) == 1
+        ), "Invalid broadcast partitions shape {}\n{}".format(
+            right_parts.shape, [[i.get() for i in j] for j in right_parts]
+        )
+
+        r_func = client.register(deploy_func, 'deploy_func')
+        return np.array(
+            [
+                [
+                    PandasOnCloudburstFramePartition(
+                        deploy_func(
+                            part.future,
+                            right_parts[col_idx].future
+                            if axis
+                            else right_parts[row_idx].future,
+                            apply_func,
+                            part.call_queue,
+                            right_parts[col_idx].call_queue
+                            if axis
+                            else right_parts[row_idx].call_queue,
+                        )
+                    )
+                    for col_idx, part in enumerate(left[row_idx])
+                ]
+                for row_idx in range(len(left))
+            ]
+        )

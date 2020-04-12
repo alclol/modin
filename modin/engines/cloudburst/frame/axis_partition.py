@@ -28,7 +28,7 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
         cls, axis, func, num_splits, kwargs, maintain_partitioning, *partitions
     ):
         client = get_or_init_client()
-        r_func = cloudburst.register(
+        r_func = client.register(
             PandasFrameAxisPartition.deploy_axis_func, "PandasFrameAxisPartition.deploy_axis_func"
         )
 
