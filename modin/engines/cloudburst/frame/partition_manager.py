@@ -108,7 +108,7 @@ class CloudburstFrameManager(BaseFrameManager):
             [
                 [
                     PandasOnCloudburstFramePartition(
-                        deploy_func(
+                        r_func(
                             part.future,
                             right_parts[col_idx].future
                             if axis
