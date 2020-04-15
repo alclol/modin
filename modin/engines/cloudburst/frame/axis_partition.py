@@ -26,18 +26,18 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
 
-        func = PandasFrameAxisPartition.deploy_axis_func
         pure = False
         args = [axis, func, num_splits, kwargs, maintain_partitioning, *partitions, pure]
-        # f = cloudburst.register(lambda _, _args: func(*_args), func.__name__)
-        f = cloudburst.register(func, func.__name__)
-        axis_result = f(args)
+        f = cloudburst.register(PandasFrameAxisPartition.deploy_axis_func, func.__name__)
+        axis_result = f(*args)
+        breakpoint();
 
         if num_splits == 1:
             return axis_result
 
         unpack = cloudburst.register(lambda _, l, i: l[i], "unpack")
-        return [unpack(axis_result, i) for i in range(num_splits)]
+        res = [unpack(axis_result, i) for i in range(num_splits)]
+        return res
 
     @classmethod
     def deploy_func_between_two_axis_partitions(
@@ -48,16 +48,19 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
 
+        breakpoint()
         func = PandasFrameAxisPartition.deploy_func_between_two_axis_partitions
         args = [axis, func, num_splits, len_of_left, kwargs, *partitions, False]
         f = cloudburst.register(lambda _, _args: func(*_args), func.__name__)
+        breakpoint()
         axis_result = f(args)
+        print(" axis_res = ", axis_result)
 
         if num_splits == 1:
             return axis_result
 
         unpack = cloudburst.register(lambda _, l, i: l[i], "unpack")
-        return [unpack(future_obj, i) for i in range(num_splits)]
+        return [unpack(axis_result, i) for i in range(num_splits)]
 
 class PandasOnCloudburstFrameColumnPartition(PandasOnCloudburstFrameAxisPartition):
     """The column partition implementation for Multiprocess. All of the implementation
