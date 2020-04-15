@@ -129,8 +129,15 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         import uuid
 
         ref = str(uuid.uuid4())
+        
+        global cloudburst
+        if __execution_engine__ == "Cloudburst" and cloudburst is None:
+            from cloudburst.shared.reference import CloudburstReference
+            from modin.engines.cloudburst.utils import get_or_init_client
+            cloudburst = get_or_init_client()
+
         cloudburst.put_object(ref, obj)
-        return cls(DropletReference(ref, deserialize=True))
+        return cls(CloudburstReference(ref, deserialize=True))
 
     @classmethod
     def preprocess_func(cls, func):
