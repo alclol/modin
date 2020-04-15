@@ -104,6 +104,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             A Pandas DataFrame.
         """
         dataframe = self.get()
+        breakpoint()
         assert type(dataframe) is pandas.DataFrame or type(dataframe) is pandas.Series
 
         return dataframe

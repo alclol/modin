@@ -311,6 +311,7 @@ class BaseFrameManager(object):
         Returns:
             A Pandas DataFrame
         """
+        breakpoint()
         retrieved_objects = [[obj.to_pandas() for obj in part] for part in partitions]
         if all(
             isinstance(part, pandas.Series) for row in retrieved_objects for part in row

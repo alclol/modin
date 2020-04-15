@@ -13,8 +13,9 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
         self.list_of_blocks = [obj.future for obj in list_of_blocks]
 
     partition_type = PandasOnCloudburstFramePartition
-#    if __execution_engine__ == "Cloudburst":
-#        instance_type = Future
+    if __execution_engine__ == "Cloudburst":
+        from distributed import Future
+        instance_type = Future
 
     @classmethod
     def deploy_axis_func(
@@ -30,13 +31,11 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
         args = [axis, func, num_splits, kwargs, maintain_partitioning, *partitions, pure]
         f = cloudburst.register(PandasFrameAxisPartition.deploy_axis_func, func.__name__)
         axis_result = f(*args)
-        breakpoint();
 
         if num_splits == 1:
             return axis_result
 
-        unpack = cloudburst.register(lambda _, l, i: l[i], "unpack")
-        res = [unpack(axis_result, i) for i in range(num_splits)]
+        res = [cloudburst.register(lambda _, l: l[i], "unpack")(axis_result) for i in range(num_splits)]
         return res
 
     @classmethod
