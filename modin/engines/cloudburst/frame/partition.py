@@ -4,7 +4,7 @@ import pandas
 from modin import __execution_engine__
 
 if __execution_engine__ == "Cloudburst":
-    cloudburst = None
+    client = None
 
 def apply_list_of_funcs(cloudburst, funcs, df):
     for func, kwargs in funcs:
@@ -51,7 +51,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         call_queue = self.call_queue + [[func, kwargs]]
 
         global client
-        if __execution_engine__ == "Cloudburst" and cloudburst is None:
+        if __execution_engine__ == "Cloudburst" and client is None:
             from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
