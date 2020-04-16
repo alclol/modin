@@ -12,7 +12,7 @@ from .axis_partition import (
 )
 
 if __execution_engine__ == "Cloudburst":
-    cloudburst = None
+    client = None
     import cloudpickle as pkl
 
 
@@ -60,8 +60,8 @@ class CloudburstFrameManager(BaseFrameManager):
             A Pandas Index object.
         """
 
-        global cloudburst
-        if __execution_engine__ == "Cloudburst" and cloudburst is None:
+        global client
+        if __execution_engine__ == "Cloudburst" and client is None:
             from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
@@ -88,8 +88,8 @@ class CloudburstFrameManager(BaseFrameManager):
     @classmethod
     def broadcast_apply(cls, axis, apply_func, left, right):
 
-        global cloudburst
-        if __execution_engine__ == "Cloudburst" and cloudburst is None:
+        global client
+        if __execution_engine__ == "Cloudburst" and client is None:
             from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
