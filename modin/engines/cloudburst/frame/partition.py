@@ -5,9 +5,12 @@ from modin import __execution_engine__
 
 if __execution_engine__ == "Cloudburst":
     client = None
+    import cloudpickle as pkl
 
-def apply_list_of_funcs(cloudburst, funcs, df):
+def apply_list_of_funcs(funcs, df):
     for func, kwargs in funcs:
+        if isinstance(func, bytes):
+            func = pkl.loads(func)
         df = func(df, **kwargs)
     return df
 
