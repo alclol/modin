@@ -91,7 +91,6 @@ class BaseFrameAxisPartition(object):  # pragma: no cover
     partition_type = None
 
     def _wrap_partitions(self, partitions):
-        breakpoint()
         if isinstance(partitions, self.instance_type):
             return [self.partition_type(partitions)]
         else:
