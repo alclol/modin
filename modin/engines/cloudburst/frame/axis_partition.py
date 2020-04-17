@@ -46,11 +46,9 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
 
-        breakpoint()
         func = PandasFrameAxisPartition.deploy_func_between_two_axis_partitions
         args = [axis, func, num_splits, len_of_left, kwargs, *partitions, False]
         f = cloudburst.register(lambda _, _args: func(*_args), func.__name__)
-        breakpoint()
         axis_result = f(args)
         print(" axis_res = ", axis_result)
 

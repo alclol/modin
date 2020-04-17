@@ -107,7 +107,6 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             A Pandas DataFrame.
         """
         dataframe = self.get()
-        breakpoint()
         assert type(dataframe) is pandas.DataFrame or type(dataframe) is pandas.Series
 
         return dataframe
@@ -185,14 +184,14 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         if self._length_cache is None:
             self._length_cache = self.apply(lambda df: len(df)).future
         if isinstance(self._length_cache, type(self.future)):
-            self._length_cache = self._length_cache.result()
+            self._length_cache = self._length_cache.get()
         return self._length_cache
 
     def width(self):
         if self._width_cache is None:
             self._width_cache = self.apply(lambda df: len(df.columns)).future
         if isinstance(self._width_cache, type(self.future)):
-            self._width_cache = self._width_cache.result()
+            self._width_cache = self._width_cache.get()
         return self._width_cache
 
     @classmethod
