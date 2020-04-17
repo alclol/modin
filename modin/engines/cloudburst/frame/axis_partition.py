@@ -27,15 +27,14 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
 
-        pure = False
-        args = [axis, func, num_splits, kwargs, maintain_partitioning, *partitions, pure]
-        f = cloudburst.register(PandasFrameAxisPartition.deploy_axis_func, func.__name__)
+        args = [axis, func, num_splits, kwargs, maintain_partitioning, *partitions]
+        f = cloudburst.register(lambda _, *args: PandasFrameAxisPartition.deploy_axis_func(*args), 'PandasFrameAxisPartition.deploy_axis_func')
         axis_result = f(*args)
 
         if num_splits == 1:
             return axis_result
-
-        res = [cloudburst.register(lambda _, l: l[i], "unpack")(axis_result) for i in range(num_splits)]
+        unpack = cloudburst.register(lambda _, l, i: l[i], "unpack")
+        res = [unpack(axis_result, i) for i in range(num_splits)]
         return res
 
     @classmethod

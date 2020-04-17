@@ -16,7 +16,6 @@ if __execution_engine__ == "Cloudburst":
     import cloudpickle as pkl
 
 
-    # TODO: Convert to Cloudburst
     def deploy_func(df, other, apply_func, call_queue_df=None, call_queue_other=None):
         if call_queue_df is not None and len(call_queue_df) > 0:
             for call, kwargs in call_queue_df:
