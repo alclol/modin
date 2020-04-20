@@ -141,6 +141,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
 
         # TODO: Does this return a reference
         client.put_object(ref, obj)
+        from cloudburst.shared.reference import CloudburstReference
         return cls(CloudburstReference(ref, deserialize=True))
 
     @classmethod

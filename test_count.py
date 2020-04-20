@@ -3,7 +3,7 @@
 import os
 os.environ["MODIN_IP"]="127.0.0.1"
 os.environ["MODIN_CONNECTION"]="127.0.0.1"
-os.environ["MODIN_ENGINE"]="cloudburst"
+os.environ["MODIN_ENGINE"]="Cloudburst"
 import modin.pandas as pd
 import numpy as np
 
