@@ -23,7 +23,6 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
     ):
         global cloudburst
         if not cloudburst:
-            from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
 
@@ -42,7 +41,6 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
         cls, axis, func, num_splits, len_of_left, kwargs, *partitions
     ):
         if not cloudburst:
-            from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
 

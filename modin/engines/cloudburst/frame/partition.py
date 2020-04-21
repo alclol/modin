@@ -55,7 +55,6 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
 
         global client
         if __execution_engine__ == "Cloudburst" and client is None:
-            from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
 
@@ -135,7 +134,6 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         
         global client
         if __execution_engine__ == "Cloudburst" and client is None:
-            from cloudburst.shared.reference import CloudburstReference
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
 
