@@ -14,8 +14,8 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
 
     partition_type = PandasOnCloudburstFramePartition
     if __execution_engine__ == "Cloudburst":
-        from distributed import Future
-        instance_type = Future
+        from cloudburst.shared.future import CloudburstFuture
+        instance_type = CloudburstFuture
 
     @classmethod
     def deploy_axis_func(
