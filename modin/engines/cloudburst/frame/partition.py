@@ -59,7 +59,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             client = get_or_init_client()
 
         func = client.register(
-            apply_list_of_funcs, "apply_list_of_funcs"
+                lambda _, call_queue, self_future: apply_list_of_funcs(call_queue, self_future), "apply_list_of_funcs"
         )
         future = func(call_queue, self.future)
         return PandasOnCloudburstFramePartition(future)
