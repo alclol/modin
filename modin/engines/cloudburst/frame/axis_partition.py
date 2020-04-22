@@ -40,6 +40,7 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
     def deploy_func_between_two_axis_partitions(
         cls, axis, func, num_splits, len_of_left, kwargs, *partitions
     ):
+        global cloudburst
         if not cloudburst:
             from modin.engines.cloudburst.utils import get_or_init_client
             cloudburst = get_or_init_client()
