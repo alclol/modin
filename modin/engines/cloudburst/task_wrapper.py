@@ -11,7 +11,7 @@ class CloudburstTask:
            from modin.engines.cloudburst.utils import get_or_init_client
            cloudburst = get_or_init_client()
 
-        f = cloudburst.register(func, func.__name__)
+        f = cloudburst.register(lambda _, kwargs: func(**kwargs), func.__name__)
         future_obj = f(kwargs)
         unpack = cloudburst.register(lambda _, l, i: l[i], "unpack")
         return [unpack(future_obj, i) for i in range(num_return_vals)]
