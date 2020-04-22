@@ -39,7 +39,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         elif isinstance(self.future, CloudburstReference):
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
-            return client.get(self.future.key).get()
+            return client.get_object(self.future.key)
         return self.future.get()
 
     def apply(self, func, **kwargs):
