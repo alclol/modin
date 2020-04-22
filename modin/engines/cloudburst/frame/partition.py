@@ -6,6 +6,7 @@ from modin import __execution_engine__
 if __execution_engine__ == "Cloudburst":
     client = None
     import cloudpickle as pkl
+    from cloudburst.shared.reference import CloudburstReference
 
 def apply_list_of_funcs(funcs, df):
     for func, kwargs in funcs:
@@ -35,6 +36,10 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         # blocking operation
         if isinstance(self.future, pandas.DataFrame):
             return self.future
+        elif isinstance(self.future, CloudburstReference):
+            from modin.engines.cloudburst.utils import get_or_init_client
+            client = get_or_init_client()
+            return client.get(self.future.key).get()
         return self.future.get()
 
     def apply(self, func, **kwargs):
@@ -139,7 +144,6 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
 
         # TODO: Does this return a reference
         client.put_object(ref, obj)
-        from cloudburst.shared.reference import CloudburstReference
         return cls(CloudburstReference(ref, deserialize=True))
 
     @classmethod
