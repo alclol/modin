@@ -21,13 +21,11 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
     def deploy_axis_func(
         cls, axis, func, num_splits, kwargs, maintain_partitioning, *partitions
     ):
-        global cloudburst
-        if not cloudburst:
-            from modin.engines.cloudburst.utils import get_or_init_client
-            cloudburst = get_or_init_client()
+        from modin.engines.cloudburst.utils import get_or_init_client
+        cloudburst = get_or_init_client()
 
         args = [axis, func, num_splits, kwargs, maintain_partitioning, *partitions]
-        f = cloudburst.register(lambda _, *args: PandasFrameAxisPartition.deploy_axis_func(*args), 'PandasFrameAxisPartition.deploy_axis_func')
+        f = cloudburst.register(lambda _, *args: PandasFrameAxisPartition.deploy_axis_func(*args), "deploy_axis_func")
         axis_result = f(*args)
 
         if num_splits == 1:
@@ -40,16 +38,13 @@ class PandasOnCloudburstFrameAxisPartition(PandasFrameAxisPartition):
     def deploy_func_between_two_axis_partitions(
         cls, axis, func, num_splits, len_of_left, kwargs, *partitions
     ):
-        global cloudburst
-        if not cloudburst:
-            from modin.engines.cloudburst.utils import get_or_init_client
-            cloudburst = get_or_init_client()
+        from modin.engines.cloudburst.utils import get_or_init_client
+        cloudburst = get_or_init_client()
 
-        func = PandasFrameAxisPartition.deploy_func_between_two_axis_partitions
-        args = [axis, func, num_splits, len_of_left, kwargs, *partitions, False]
-        f = cloudburst.register(lambda _, _args: func(*_args), func.__name__)
-        axis_result = f(args)
-        print(" axis_res = ", axis_result)
+        args = [axis, func, num_splits, len_of_left, kwargs, *partitions]
+        f = cloudburst.register(lambda _, *args: PandasFrameAxisPartition.deploy_func_between_two_axis_partitions(*args), "deploy_between_two_axix_partitions")
+
+        axis_result = f(*args)
 
         if num_splits == 1:
             return axis_result
