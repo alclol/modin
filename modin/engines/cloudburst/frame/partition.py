@@ -57,15 +57,17 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
              applied to it.
         """
         call_queue = self.call_queue + [[func, kwargs]]
+        print(f' kwargs = {kwargs}')
 
-        global client
-        if __execution_engine__ == "Cloudburst" and client is None:
-            from modin.engines.cloudburst.utils import get_or_init_client
-            client = get_or_init_client()
+        from modin.engines.cloudburst.utils import get_or_init_client
+        client = get_or_init_client()
+        future = client.get_object(self.future.key)
+
 
         func = client.register(
                 lambda _, call_queue, self_future: apply_list_of_funcs(call_queue, self_future), "apply_list_of_funcs"
         )
+        print(f'call_queue is {call_queue}, self.future = {self.future}')
         future = func(call_queue, self.future)
         return PandasOnCloudburstFramePartition(future)
 
@@ -137,10 +139,8 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
 
         ref = str(uuid.uuid4())
         
-        global client
-        if __execution_engine__ == "Cloudburst" and client is None:
-            from modin.engines.cloudburst.utils import get_or_init_client
-            client = get_or_init_client()
+        from modin.engines.cloudburst.utils import get_or_init_client
+        client = get_or_init_client()
 
         # TODO: Does this return a reference
         client.put_object(ref, obj)
@@ -196,6 +196,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             self._width_cache = self.apply(lambda df: len(df.columns)).future
         if isinstance(self._width_cache, type(self.future)):
             self._width_cache = self._width_cache.get()
+        print(f' self._width_cache = {self._width_cache}')
         return self._width_cache
 
     @classmethod
