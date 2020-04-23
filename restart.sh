@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ../cloudburst && 
+cd ../cloudburst && # rm log_* &&
 ./scripts/start-cloudburst-local.sh -n && 
 cd ../modin
 

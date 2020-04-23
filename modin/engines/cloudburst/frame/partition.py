@@ -17,6 +17,8 @@ def apply_list_of_funcs(funcs, df):
 
 class PandasOnCloudburstFramePartition(BaseFramePartition):
     def __init__(self, future, length=None, width=None, call_queue=None):
+        if future is None:
+            breakpoint()
         self.future = future
 
         from cloudburst.shared.reference import CloudburstReference
@@ -43,10 +45,8 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         # blocking operation
         if isinstance(self.future, pandas.DataFrame):
             return self.future
-        elif isinstance(self.future, CloudburstReference):
-            from modin.engines.cloudburst.utils import get_or_init_client
-            client = get_or_init_client()
-            return client.get_object(self.future.key)
+        if self.future is None:
+            breakpoint()
         return self.future.get()
 
     def apply(self, func, **kwargs):
@@ -74,9 +74,13 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
                 lambda _, call_queue, self_future: apply_list_of_funcs(call_queue, self_future), "apply_list_of_funcs"
         )
         future = func(call_queue, self.future)
+        if future is None:
+            breakpoint()
         return PandasOnCloudburstFramePartition(future)
 
     def add_to_apply_calls(self, func, **kwargs):
+        if self.future is None:
+            breakpoint()
         return PandasOnCloudburstFramePartition(
             self.future, call_queue=self.call_queue + [[func, kwargs]]
         )
@@ -104,6 +108,9 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         return new_obj
 
     def __copy__(self):
+
+        if future is None:
+            breakpoint()
         return PandasOnCloudburstFramePartition(
             self.future, self._length_cache, self._width_cache
         )
