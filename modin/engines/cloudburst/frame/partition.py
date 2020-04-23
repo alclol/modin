@@ -196,6 +196,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             self._length_cache = self.apply(lambda df: len(df)).future
         if isinstance(self._length_cache, type(self.future)):
             self._length_cache = self._length_cache.get()
+        print(f'_length_cache = {self._length_cache}')
         return self._length_cache
 
     def width(self):
@@ -203,6 +204,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             self._width_cache = self.apply(lambda df: len(df.columns)).future
         if isinstance(self._width_cache, type(self.future)):
             self._width_cache = self._width_cache.get()
+        print(f'_width_cache = {self._width_cache}')
         return self._width_cache
 
     @classmethod
