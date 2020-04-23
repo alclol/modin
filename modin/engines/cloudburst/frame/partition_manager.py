@@ -16,8 +16,6 @@ if __execution_engine__ == "Cloudburst":
     import cloudpickle as pkl
 
 
-  
-
 class CloudburstFrameManager(BaseFrameManager):
     # This object uses DropletRemotePartition objects as the underlying store.
     _partition_class = PandasOnCloudburstFramePartition
