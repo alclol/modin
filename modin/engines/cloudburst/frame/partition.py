@@ -18,6 +18,13 @@ def apply_list_of_funcs(funcs, df):
 class PandasOnCloudburstFramePartition(BaseFramePartition):
     def __init__(self, future, length=None, width=None, call_queue=None):
         self.future = future
+
+        from cloudburst.shared.reference import CloudburstReference
+        if (isinstance(future, CloudburstReference)):
+            from modin.engines.cloudburst.utils import get_or_init_client
+            client = get_or_init_client()
+            future = client.get_object(future.key)
+
         if call_queue is None:
             call_queue = []
         self.call_queue = call_queue
