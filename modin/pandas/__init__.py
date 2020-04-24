@@ -11,13 +11,13 @@
 # ANY KIND, either express or implied. See the License for the specific language
 # governing permissions and limitations under the License.
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas
 
 __pandas_version__ = "1.0.3"
 
 if pandas.__version__ != __pandas_version__:
-    import warnings
-
     warnings.warn(
         "The pandas version installed does not match the required pandas version in "
         "Modin. This may cause undesired side effects!".format(__pandas_version__)

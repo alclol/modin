@@ -41,6 +41,9 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         """
         self.drain_call_queue()
         # blocking operation
+
+        print("Testing. Type is ", type(self.future))
+
         if isinstance(self.future, pandas.DataFrame):
             return self.future
         elif isinstance(self.future, CloudburstReference):
@@ -118,6 +121,8 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
             A Pandas DataFrame.
         """
         dataframe = self.get()
+
+        print("testing. DF is ", type(dataframe))
         assert type(dataframe) is pandas.DataFrame or type(dataframe) is pandas.Series
 
         return dataframe
