@@ -1,13 +1,11 @@
 from modin import __execution_engine__
-if __execution_engine__ == "Cloudburst":
-   cloudburst = None
 
 class CloudburstTask:
     @classmethod
     def deploy(cls, func, num_return_vals, kwargs):
 
         global cloudburst
-        if __execution_engine__ == "Cloudburst" and cloudburst is None:
+        if __execution_engine__ == "Cloudburst":
            from modin.engines.cloudburst.utils import get_or_init_client
            cloudburst = get_or_init_client()
 
