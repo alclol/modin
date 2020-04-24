@@ -9,11 +9,14 @@ if __execution_engine__ == "Cloudburst":
     from cloudburst.shared.reference import CloudburstReference
 
 def apply_list_of_funcs(funcs, df):
-    for func, kwargs in funcs:
-        if isinstance(func, bytes):
-            func = pkl.loads(func)
-        df = func(df, **kwargs)
-    return df
+    try:
+        for func, kwargs in funcs:
+            if isinstance(func, bytes):
+                func = pkl.loads(func)
+            df = func(df, **kwargs)
+        return df
+    except Exception as e:
+        return e
 
 class PandasOnCloudburstFramePartition(BaseFramePartition):
     def __init__(self, future, length=None, width=None, call_queue=None):
@@ -42,15 +45,19 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         self.drain_call_queue()
         # blocking operation
 
-        print("Testing. Type is ", type(self.future))
+        print("Get. Type of self.future is ", type(self.future))
 
         if isinstance(self.future, pandas.DataFrame):
             return self.future
         elif isinstance(self.future, CloudburstReference):
             from modin.engines.cloudburst.utils import get_or_init_client
             client = get_or_init_client()
-            return client.get_object(self.future.key)
-        return self.future.get()
+            res = client.get_object(self.future.key)
+            print("Result from CBRef ", res)
+            return res
+        obj = self.future.get()
+        print("Result from outsidfe", obj)
+        return obj
 
     def apply(self, func, **kwargs):
         """Apply some callable function to the data in this partition.
@@ -122,7 +129,7 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         """
         dataframe = self.get()
 
-        print("testing. DF is ", type(dataframe))
+        print("To Pandas. Get returned df of type ", type(dataframe))
         assert type(dataframe) is pandas.DataFrame or type(dataframe) is pandas.Series
 
         return dataframe
