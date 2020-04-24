@@ -41,10 +41,17 @@ class PandasOnCloudburstFramePartition(BaseFramePartition):
         Returns:
             The object that was `put`.
         """
+        from cloudburst.shared.reference import CloudburstReference
+        if (isinstance(self.future, CloudburstReference)):
+            from modin.engines.cloudburst.utils import get_or_init_client
+            client = get_or_init_client()
+            self.future = client.get_object(self.future.key)
+
         self.drain_call_queue()
         # blocking operation
         if isinstance(self.future, pandas.DataFrame):
             return self.future
+
         if self.future is None:
             breakpoint()
         return self.future.get()
