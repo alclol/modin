@@ -14,7 +14,7 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     description="Modin: Make your pandas code run faster by changing one line of code.",
     packages=find_packages(),
-    url="https://github.com/modin-project/modin",
+    url="https://github.com/alclol/modin.git",
     # long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=["pandas==1.0.3", "packaging"],
