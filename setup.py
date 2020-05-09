@@ -6,6 +6,7 @@ import versioneer
 
 dask_deps = ["dask>=2.1.0", "distributed>=2.3.2"]
 ray_deps = ["ray==0.8.3"]
+cloudburst_deps = []
 
 setup(
     name="modin",
@@ -21,7 +22,8 @@ setup(
         # can be installed by pip install modin[dask]
         "dask": dask_deps,
         "ray": ray_deps,
-        "all": dask_deps + ray_deps,
+        "cloudburst": cloudburst_deps,
+        "all": dask_deps + ray_deps + cloudburst_deps,
     },
     python_requires=">=3.5",
 )
