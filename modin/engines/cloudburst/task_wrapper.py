@@ -1,6 +1,7 @@
 from modin import __execution_engine__
 if __execution_engine__ == "Cloudburst":
    cloudburst = None
+pd.DEFAULT_NPARTITIONS = 12
 
 class CloudburstTask:
     @classmethod
