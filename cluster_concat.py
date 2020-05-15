@@ -1,139 +1,60 @@
 #!/opt/conda/bin/python
-import pandas
 
-import os
-os.environ["MODIN_IP"]="3.220.239.84"
-os.environ["MODIN_CONNECTION"]="a78011eebf0be41d3b94b96000a33320-1322524692.us-east-1.elb.amazonaws.com"
+import os, time
+os.environ["MODIN_IP"]="3.91.91.212"
+os.environ["MODIN_CONNECTION"]="a257bcae8494042b595a651bbfd5c8fe-1212680712.us-east-1.elb.amazonaws.com"
 os.environ["MODIN_ENGINE"]="Cloudburst"
 import modin.pandas as pd
+import pandas as opd
 import numpy as np
 
-def generate_dfs():
-    df = pandas.DataFrame(
-        {
-            "col1": [0, 1, 2, 3],
-            "col2": [4, 5, 6, 7],
-            "col3": [8, 9, 10, 11],
-            "col4": [12, 13, 14, 15],
-            "col5": [0, 0, 0, 0],
-        }
-    )
+def generate_dfs(row, col):
+    df1 = pd.DataFrame(np.random.randint(0,1000,size=(row, col)), columns=list('ABCD'))
+    df2 = pd.DataFrame(np.random.randint(0,1000,size=(row, col)), columns=list('ABCD'))
+#    df = pandas.DataFrame(
+#        {
+#            "col1": [0, 1, 2, 3],
+#            "col2": [4, 5, 6, 7],
+#            "col3": [8, 9, 10, 11],
+#            "col4": [12, 13, 14, 15],
+#            "col5": [0, 0, 0, 0],
+#        }
+#    )
+#
+#    df2 = pandas.DataFrame(
+#        {
+#            "col1": [0, 1, 2, 3],
+#            "col2": [4, 5, 6, 7],
+#            "col3": [8, 9, 10, 11],
+#            "col6": [12, 13, 14, 15],
+#            "col7": [0, 0, 0, 0],
+#        }
+#    )
+    return df1, df2
 
-    df2 = pandas.DataFrame(
-        {
-            "col1": [0, 1, 2, 3],
-            "col2": [4, 5, 6, 7],
-            "col3": [8, 9, 10, 11],
-            "col6": [12, 13, 14, 15],
-            "col7": [0, 0, 0, 0],
-        }
-    )
-    return df, df2
+def generate_odfs(row, col):
+    df1 = opd.DataFrame(np.random.randint(0,1000,size=(row, col)), columns=list('ABCD'))
+    df2 = opd.DataFrame(np.random.randint(0,1000,size=(row, col)), columns=list('ABCD'))
+    return df1, df2
 
-def df_equals(df1, df2):
-    """Tests if df1 and df2 are equal.
 
-    Args:
-        df1: (pandas or modin DataFrame or series) dataframe to test if equal.
-        df2: (pandas or modin DataFrame or series) dataframe to test if equal.
+print("Compare concat operation performance: ")
+for i in [500, 5000, 50000, 500000, 5000000, 50000000, 500000000]:
+    print(f"Dataframe size: {i} x 4")
 
-    Returns:
-        True if df1 is equal to df2.
-    """
-    types_for_almost_equals = (
-        pandas.core.indexes.range.RangeIndex,
-        pandas.core.indexes.base.Index,
-    )
-
-    # Gets AttributError if modin's groupby object is not import like this
-    from modin.pandas.groupby import DataFrameGroupBy
-
-    groupby_types = (pandas.core.groupby.DataFrameGroupBy, DataFrameGroupBy)
-
-    # The typing behavior of how pandas treats its index is not consistent when the
-    # length of the DataFrame or Series is 0, so we just verify that the contents are
-    # the same.
-    if (
-        hasattr(df1, "index")
-        and hasattr(df2, "index")
-        and len(df1) == 0
-        and len(df2) == 0
-    ):
-        if type(df1).__name__ == type(df2).__name__:
-            if hasattr(df1, "name") and hasattr(df2, "name") and df1.name == df2.name:
-                return
-            if (
-                hasattr(df1, "columns")
-                and hasattr(df2, "columns")
-                and df1.columns.equals(df2.columns)
-            ):
-                return
-        assert False
-
-    # Convert to pandas
-    if isinstance(df1, pd.DataFrame):
-        df1 = to_pandas(df1)
-    if isinstance(df2, pd.DataFrame):
-        df2 = to_pandas(df2)
-    if isinstance(df1, pd.Series):
-        df1 = to_pandas(df1)
-    if isinstance(df2, pd.Series):
-        df2 = to_pandas(df2)
-
-    if isinstance(df1, pandas.DataFrame) and isinstance(df2, pandas.DataFrame):
-        if (df1.empty and not df2.empty) or (df2.empty and not df1.empty):
-            return False
-        elif df1.empty and df2.empty and type(df1) != type(df2):
-            return False
-
-    if isinstance(df1, pandas.DataFrame) and isinstance(df2, pandas.DataFrame):
-        try:
-            assert_frame_equal(
-                df1.sort_index(axis=1),
-                df2.sort_index(axis=1),
-                check_dtype=False,
-                check_datetimelike_compat=True,
-                check_index_type=False,
-                check_column_type=False,
-            )
-        except Exception:
-            assert_frame_equal(
-                df1,
-                df2,
-                check_dtype=False,
-                check_datetimelike_compat=True,
-                check_index_type=False,
-                check_column_type=False,
-            )
-    elif isinstance(df1, types_for_almost_equals) and isinstance(
-        df2, types_for_almost_equals
-    ):
-        assert_almost_equal(df1, df2, check_dtype=False)
-    elif isinstance(df1, pandas.Series) and isinstance(df2, pandas.Series):
-        assert_almost_equal(df1, df2, check_dtype=False, check_series_type=False)
-    elif isinstance(df1, groupby_types) and isinstance(df2, groupby_types):
-        for g1, g2 in zip(df1, df2):
-            assert g1[0] == g2[0]
-            df_equals(g1[1], g2[1])
-    elif (
-        isinstance(df1, pandas.Series)
-        and isinstance(df2, pandas.Series)
-        and df1.empty
-        and df2.empty
-    ):
-        assert all(df1.index == df2.index)
-        assert df1.dtypes == df2.dtypes
-    else:
-        if df1 != df2:
-            np.testing.assert_almost_equal(df1, df2)
-
-df, df2 = generate_dfs()
+    df1, df2 = generate_dfs(i, 4)
+    odf1, odf2 = generate_odfs(i, 4)
 
 #frame_data = np.random.randint(0, 100, size=(2**10, 2**6))
 #df = pd.DataFrame(frame_data).add_prefix("col")
 
-cb_res = pd.concat([df, df2])
-pd_res = pandas.concat([df, df2])
-print(df, df2)
-print(cb_res, pd_res)
+    start = time.time()
+    res = pd.concat([df1, df2])
+    end = time.time()
+    print(f'modin spent = {end-start} seconds')
+
+    start = time.time()
+    res = opd.concat([odf1, odf2])
+    end = time.time()
+    print(f'old pandas spent = {end-start} seconds')
 
