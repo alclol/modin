@@ -23,7 +23,7 @@ end = time.time()
 modin_duration = end - start
 print("Time to read with Modin: {} seconds".format(round(modin_duration, 3)))
 
-s3_path = "s3://modin-testdata/country.csv"
+s3_path = "s3://modin-testdata/username.csv"
 start = time.time()
 modin_df = pd.read_csv(s3_path)
 end = time.time()
